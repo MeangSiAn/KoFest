@@ -1,18 +1,73 @@
-*.iml
-.gradle
+# ── 서명 · 비밀값 ────────────────────────────────────────────────
+# 저장소에 절대 들어가면 안 되는 것들. 맨 위에 둔다.
+# API 키는 local.properties 에 있고 BuildConfig 로 주입된다 (CLAUDE.md 참고).
+local.properties
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+secrets.properties
+*.p12
+*.pepk
+# Firebase 를 붙이면 여기에 키가 담긴다. 커밋하려면 이 줄을 의도적으로 지울 것.
+google-services.json
+
+# ── Gradle ─────────────────────────────────────────────────────
+.gradle
+.gradletasknamecache
+# Kotlin 컴파일러 세션 (빌드 부산물)
+.kotlin
+
+# ── 빌드 산출물 ─────────────────────────────────────────────────
+# 모듈마다 .gitignore 가 또 있지만, 새 모듈이 생겨도 새는 일이 없게 여기서도 막는다.
+build/
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+*.apk
+*.aab
+*.ap_
+*.aar
+*.dex
+*.class
+*.hprof
+output-metadata.json
 
-# Kotlin 컴파일러 세션 (빌드 부산물)
-.kotlin
+# ── Android Studio / IntelliJ ──────────────────────────────────
+*.iml
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetDropDown.xml
+.idea/deploymentTargetSelector.xml
+.idea/appInsightsSettings.xml
+.idea/androidTestResultsUserPreferences.xml
+.idea/runConfigurations.xml
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/gradle.xml
+.idea/misc.xml
+.idea/kotlinc.xml
+.idea/migrations.xml
+.idea/other.xml
+.idea/sonarlint/
+.idea/shelf/
+.idea/httpRequests/
+.idea/dictionaries/
+
+# ── 편집기 · OS ────────────────────────────────────────────────
+.vscode/
+.fleet/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ── 로그 ───────────────────────────────────────────────────────
+*.log
