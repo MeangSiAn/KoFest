@@ -25,6 +25,14 @@ object ListContract {
         val sectionsLanguage: AppLanguage = AppLanguage.KO,
         val counts: LanguageCounts = LanguageCounts(ko = 0, en = 0),
         val nextCursor: String? = null,
+        /**
+         * 이 달의 섹션으로 화면을 옮겨야 한다. 옮기고 나면 지운다.
+         *
+         * '이번 달'을 걸어도 그 달에 **걸치는** 연중 상설 행사가 목록 앞을 채운다
+         * (9월 기준 46건). 정렬이 `start_date` 라 그 달 섹션은 한참 아래에 있어,
+         * 필터만 걸고 두면 눌러도 아무 일 없는 것처럼 보인다.
+         */
+        val scrollToMonth: LocalDate? = null,
         val isLoading: Boolean = true,
         val isLoadingMore: Boolean = false,
         val isStale: Boolean = false,
@@ -40,6 +48,9 @@ object ListContract {
         data object Retry : Action
         data object LoadMore : Action
         data object ClearFilters : Action
+
+        /** 화면을 옮겼다. 표시를 지운다 */
+        data object ScrollHandled : Action
         data object ToggleOngoing : Action
         data object ToggleHasImage : Action
         data class SelectRegion(val regionCode: String?) : Action

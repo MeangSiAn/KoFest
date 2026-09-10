@@ -46,6 +46,20 @@ fun ListScreen(
             }
     }
 
+    // 필터를 걸어 그 달로 옮겨가야 하면, 데이터가 들어온 뒤 그 섹션 머리로 스크롤한다.
+    LaunchedEffect(uiState.scrollToMonth, uiState.sections) {
+        val target = uiState.scrollToMonth ?: return@LaunchedEffect
+        var index = 0
+        for (section in uiState.sections) {
+            if (section.month == target) {
+                listState.scrollToItem(index)
+                break
+            }
+            index += 1 + section.festivals.size   // 월 헤더 + 그 달의 행들
+        }
+        onAction(ListContract.Action.ScrollHandled)
+    }
+
     val regionCode = uiState.filter.regionCode
     val title = if (regionCode == null) {
         s.list.title

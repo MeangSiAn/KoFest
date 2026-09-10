@@ -49,6 +49,8 @@ class ListViewModel @Inject constructor(
 
             ListContract.Action.Retry -> reload()
 
+            ListContract.Action.ScrollHandled -> updateState { copy(scrollToMonth = null) }
+
             ListContract.Action.LoadMore -> loadMore()
 
             ListContract.Action.ClearFilters -> applyFilter(FestivalFilter())
@@ -64,17 +66,15 @@ class ListViewModel @Inject constructor(
 
             ListContract.Action.ToggleThisMonth -> {
                 val filter = currentState.filter
-                applyFilter(
-                    if (filter.from != null) {
-                        filter.copy(from = null, to = null)
-                    } else {
-                        val today = LocalDate.now()
-                        filter.copy(
-                            from = today.withDayOfMonth(1),
-                            to = today.withDayOfMonth(today.lengthOfMonth()),
-                        )
-                    },
-                )
+                if (filter.from != null) {
+                    applyFilter(filter.copy(from = null, to = null))
+                } else {
+                    val firstDay = LocalDate.now().withDayOfMonth(1)
+                    applyFilter(
+                        filter = filter.copy(from = firstDay, to = firstDay.plusMonths(1).minusDays(1)),
+                        scrollToMonth = firstDay,
+                    )
+                }
             }
 
             is ListContract.Action.SelectLanguage ->
@@ -85,28 +85,48 @@ class ListViewModel @Inject constructor(
         }
     }
 
-    private fun applyFilter(filter: FestivalFilter) {
+    private fun applyFilter(filter: FestivalFilter, scrollToMonth: LocalDate? = null) {
         updateState { copy(filter = filter) }
-        reload()
+        reload(scrollToMonth)
     }
 
-    private fun reload() {
+    private fun reload(scrollToMonth: LocalDate? = null) {
         loadJob?.cancel()
         loadMoreJob?.cancel()
-        updateState { copy(isLoadingMore = false, isLoading = true, hasFatalError = false) }
+        updateState {
+            copy(isLoadingMore = false, isLoading = true, hasFatalError = false, scrollToMonth = null)
+        }
 
         loadJob = launchCatching(onError = ::onLoadError) {
             val language = currentState.language
-            val page = getFestivals(language, currentState.filter)
+            val filter = currentState.filter
+
+            var page = getFestivals(language, filter)
+            var items = page.items
+            // 옮겨갈 달이 첫 페이지에 없으면 나올 때까지 이어 받는다.
+            // 그 달에 걸치기만 하는 상설 행사가 앞을 채워 두세 페이지 뒤에 있을 수 있다.
+            var extraPages = 0
+            while (
+                scrollToMonth != null &&
+                page.nextCursor != null &&
+                extraPages < MAX_PAGES_TO_REACH_MONTH &&
+                items.none { it.startDate.withDayOfMonth(1) == scrollToMonth }
+            ) {
+                page = getFestivals(language, filter, cursor = page.nextCursor)
+                items = items + page.items
+                extraPages++
+            }
+
             updateState {
                 copy(
-                    sections = page.items.toMonthSections(),
+                    sections = items.toMonthSections(),
                     sectionsLanguage = language,
                     counts = page.counts,
                     nextCursor = page.nextCursor,
                     isLoading = false,
                     isStale = false,
                     hasFatalError = false,
+                    scrollToMonth = scrollToMonth,
                 )
             }
         }
@@ -156,6 +176,9 @@ class ListViewModel @Inject constructor(
     companion object {
         const val ARG_REGION = "region"
         const val ARG_ONGOING = "ongoing"
+
+        /** 무한정 받지 않는다. 20개씩 5페이지면 100건 */
+        private const val MAX_PAGES_TO_REACH_MONTH = 5
         private const val TAG = "ListViewModel"
     }
 }
