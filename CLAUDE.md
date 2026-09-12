@@ -180,8 +180,9 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
   이미 허락돼 있으면 안내 화면을 건너뛰고 바로 카드다 (`LocationProvider.hasPermission()`)
 - 위치는 프레임워크 `LocationManager` 로 읽는다 (`data/festival/local/AndroidLocationProvider`). Play 위치 라이브러리는 넣지 않았다.
   5분 안의 마지막 위치면 그대로, 없으면 8초 안에 한 번. **좌표는 ViewModel 메모리에만 있고 어디에도 저장하지 않는다.** 서버에는 소수점 5자리로 보낸다
-- 뽑기는 최소 2초 돈다 (일정 짜기와 같은 규칙). **결과는 응답이 오자마자 상태에 넣고** `isDrawing` 만 2초 버틴다 —
-  그 사이 화면이 원본 사진을 미리 받는다(`SingletonImageLoader.enqueue`). 원본이 600KB 라 느린 회선에서 5초씩 걸려 뒤집힌 카드가 빈 면이던 것을 실기기에서 겪었다.
+- 뽑기는 최소 2초 돈다 (일정 짜기와 같은 규칙). **결과는 응답이 오자마자 상태에 넣고** `isDrawing` 만 2초 버틴다.
+  화면은 그 위에 **사진이 준비될 때까지**(`PickScreen` 이 `ImageLoader.execute` 로 미리 받는다, 상한 8초) 계속 돌리고 나서 뒤집는다 —
+  사진 없이 먼저 뒤집으면 "결과 나오고 한참 뒤에 사진" 으로 보인다. 원본이 600KB 라 실기기 느린 회선(2.5KB/s)에서는 수십 초였다.
   카드 앞면은 썸네일을 밑에 깔고 원본을 위에 얹는다
 - 카드 각도는 `graphicsLayer` 람다 안에서만 읽는다. 컴포지션에서 읽으면 도는 동안 매 프레임 다시 그린다
 - `place == null` 이면 `exhausted` 로 문구를 가른다 — true 는 "다 보셨습니다, 처음부터?", false 는 "N km 안에 없습니다". 다음 누름은 `excluded` 를 비우고 처음부터

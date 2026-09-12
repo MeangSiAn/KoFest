@@ -30,6 +30,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -55,6 +59,7 @@ import com.mosstis.kofest.core.ui.strings.strings
 import com.mosstis.kofest.domain.festival.model.PickedPlace
 import com.mosstis.kofest.feature.festival.common.FestivalImage
 import com.mosstis.kofest.feature.festival.home.HomeHeader
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 
 /**
@@ -166,12 +171,22 @@ private fun StagePhase(
     val picked = uiState.picked
     val context = LocalContext.current
 
-    // 결과는 0.3초면 오는데 카드는 2초 뒤에 뒤집힌다. 그 사이에 사진을 받아 둔다 —
-    // 원본이 600KB 라 느린 회선에서는 5초씩 걸려 뒤집힌 카드가 빈 면으로 남는다 (실기기).
-    LaunchedEffect(picked?.place?.imageUrl) {
-        val url = picked?.place?.imageUrl ?: return@LaunchedEffect
-        SingletonImageLoader.get(context).enqueue(ImageRequest.Builder(context).data(url).build())
+    // 결과는 0.3초면 오지만 사진은 회선에 따라 몇 초씩 걸린다(실기기 2.5KB/s 에서 600KB = 수십 초).
+    // 사진 없이 뒤집힌 카드는 "결과 나오고 한참 뒤에 사진" 으로 보이므로, 사진이 준비될 때까지 계속 돌린다.
+    // 다만 끝없이 돌리지는 않는다 — MAX_IMAGE_WAIT 가 지나면 썸네일이든 빈 면이든 뒤집는다.
+    val imageUrl = picked?.place?.imageUrl
+    var readyUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(imageUrl) {
+        if (imageUrl == null) return@LaunchedEffect
+        readyUrl = null
+        val loader = SingletonImageLoader.get(context)
+        withTimeoutOrNull(MAX_IMAGE_WAIT_MILLIS) {
+            loader.execute(ImageRequest.Builder(context).data(imageUrl).build())
+        }
+        readyUrl = imageUrl
     }
+    // 화면이 아는 '뽑는 중' = 서버 응답 대기 + 최소 2초 + 사진 대기
+    val drawing = uiState.isDrawing || (imageUrl != null && readyUrl != imageUrl)
 
     Column(
         modifier = Modifier
@@ -183,7 +198,7 @@ private fun StagePhase(
         Text(
             text = when {
                 uiState.isLocating -> s.pick.locating
-                picked != null && !uiState.isDrawing -> s.pick.count.fill(
+                picked != null && !drawing -> s.pick.count.fill(
                     "km" to uiState.km,
                     "total" to uiState.total,
                     "nth" to uiState.seen,
@@ -198,7 +213,7 @@ private fun StagePhase(
 
         PickCard(
             picked = picked,
-            isDrawing = uiState.isDrawing,
+            isDrawing = drawing,
             modifier = Modifier
                 .padding(horizontal = KoFestDimens.ScreenMargin)
                 .fillMaxWidth(),
@@ -211,16 +226,16 @@ private fun StagePhase(
         ) {
             PickButton(
                 label = when {
-                    uiState.isDrawing -> s.pick.drawing
+                    drawing -> s.pick.drawing
                     uiState.exhausted -> s.pick.reset
                     picked != null -> s.pick.again
                     else -> s.pick.draw
                 },
-                enabled = uiState.canDraw,
+                enabled = !drawing && !uiState.isLocating,
                 onClick = { onAction(PickContract.Action.Draw) },
             )
             // '여기로 갈래요' 는 뽑힌 곳이 있을 때만 만든다. 눌러도 아무 일 없는 버튼을 두지 않는다.
-            if (picked != null && !uiState.isDrawing) {
+            if (picked != null && !drawing) {
                 PickButton(
                     label = s.pick.go,
                     ghost = true,
@@ -230,7 +245,7 @@ private fun StagePhase(
         }
 
         val message = when (val m = uiState.message) {
-            null -> if (picked == null && !uiState.isDrawing && !uiState.isLocating) s.pick.tapToDraw else ""
+            null -> if (picked == null && !drawing && !uiState.isLocating) s.pick.tapToDraw else ""
             is PickContract.Message.NoneInRange -> s.pick.none.fill("km" to m.km)
             is PickContract.Message.AllSeen -> s.pick.all.fill("total" to m.total)
             PickContract.Message.Failed -> s.pick.fail
@@ -449,3 +464,6 @@ private fun PickButton(
             .padding(horizontal = 32.dp, vertical = 15.dp),
     )
 }
+
+/** 사진을 기다리는 상한. 이보다 느린 회선이면 사진 없이 뒤집는다 */
+private const val MAX_IMAGE_WAIT_MILLIS = 8_000L
