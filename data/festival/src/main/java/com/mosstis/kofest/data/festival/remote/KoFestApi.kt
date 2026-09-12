@@ -83,6 +83,17 @@ interface KoFestApi {
     ): PlanResponse
 
     /**
+     * 오늘 뭐하지 — 주변에서 한 곳. 좌표는 소수점 5자리, `exclude` 는 콤마로 이은 contentId
+     */
+    @GET("api/pick")
+    suspend fun pick(
+        @Query("lang") lang: String,
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("exclude") exclude: String? = null,
+    ): PickResponse
+
+    /**
      * 통계. 한 건씩 보내지 않고 모아서 올린다.
      *
      * 200 이어도 서버가 일부만 받을 수 있으므로 `accepted` 를 돌려받아 보낸 수와 맞춰본다.

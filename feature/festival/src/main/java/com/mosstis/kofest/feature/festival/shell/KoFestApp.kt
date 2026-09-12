@@ -27,6 +27,7 @@ import com.mosstis.kofest.feature.festival.magazine.StoryRoute
 import com.mosstis.kofest.feature.festival.magazine.StoryViewModel
 import com.mosstis.kofest.feature.festival.place.PlaceDetailRoute
 import com.mosstis.kofest.feature.festival.place.PlaceDetailViewModel
+import com.mosstis.kofest.feature.festival.pick.PickRoute
 import com.mosstis.kofest.feature.festival.search.SearchRoute
 import com.mosstis.kofest.feature.festival.plan.PlanRoute
 import com.mosstis.kofest.feature.festival.navigation.KoFestDestination
@@ -47,7 +48,8 @@ fun KoFestApp(
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route
-    val current = KoFestDestination.fromRoute(route)
+    // 오늘 뭐하지는 홈 위젯에서 들어가는 홈의 하위 화면이다. 목업에 탭이 있고 홈이 켜져 있다 (기획서 11).
+    val current = KoFestDestination.fromRoute(route) ?: if (route == PICK_ROUTE) KoFestDestination.HOME else null
     // 언어별로 contentId 가 다르다. 테마 언어가 아니라 그 항목이 속한 데이터의 언어로 경로를 만든다 —
     // 언어를 바꾼 직후에는 화면에 아직 이전 언어의 데이터가 남아 있기 때문이다.
     val openSearch: () -> Unit = { navController.navigate(SEARCH_ROUTE) }
@@ -100,6 +102,20 @@ fun KoFestApp(
                             popUpTo(KoFestDestination.HOME.route) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
+                        }
+                    },
+                    onNavigateToPick = { navController.navigate(PICK_ROUTE) { launchSingleTop = true } },
+                    modifier = Modifier.statusBarsPadding(),
+                )
+            }
+
+            composable(PICK_ROUTE) {
+                PickRoute(
+                    onNavigateToPlace = openPlace,
+                    onNavigateToList = {
+                        navController.navigate(listRoute()) {
+                            popUpTo(KoFestDestination.HOME.route)
+                            launchSingleTop = true
                         }
                     },
                     modifier = Modifier.statusBarsPadding(),
@@ -230,6 +246,7 @@ private const val DETAIL_ROUTE = "detail"
 private const val STORY_ROUTE = "story"
 private const val PLACE_ROUTE = "place"
 private const val SEARCH_ROUTE = "search"
+private const val PICK_ROUTE = "pick"
 
 /** 광역권은 시도코드가 여럿이라 콤마로 잇는다 (경기·인천 = "41,28") */
 private fun listRoute(

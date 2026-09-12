@@ -115,6 +115,19 @@ data class KoFestTypography(
     val myRow: TextStyle,
     val myRowValue: TextStyle,
     val myNote: TextStyle,
+    // 오늘 뭐하지 (기획서 11)
+    val pickBoxTitle: TextStyle,
+    val pickBoxBody: TextStyle,
+    val pickBoxCta: TextStyle,
+    val pickTitle: TextStyle,
+    val pickLead: TextStyle,
+    val pickButton: TextStyle,
+    val pickNote: TextStyle,
+    val pickCount: TextStyle,
+    val pickCardTitle: TextStyle,
+    val pickCardPlace: TextStyle,
+    val pickCardKm: TextStyle,
+    val pickBadge: TextStyle,
 )
 
 private val TrimNone = LineHeightStyle(
@@ -233,6 +246,18 @@ fun koFestTypographyFor(koreanFirst: Boolean): KoFestTypography {
         myRow = sans(13.5),
         myRowValue = sans(12.5),
         myNote = sans(11.5, lineHeight = 11.5 * 1.7),
+        pickBoxTitle = serif(titleFamily, 17.0, FontWeight.Bold),
+        pickBoxBody = sans(12.0, lineHeight = 12.0 * 1.55),
+        pickBoxCta = sans(13.0, FontWeight.SemiBold),
+        pickTitle = serif(titleFamily, 24.0, FontWeight.Bold),
+        pickLead = sans(14.0, lineHeight = 14.0 * 1.85),
+        pickButton = sans(15.0, FontWeight.SemiBold),
+        pickNote = sans(12.0),
+        pickCount = serif(KoFestFonts.CormorantGaramond, 13.0),
+        pickCardTitle = serif(titleFamily, 21.0, FontWeight.Bold, lineHeight = 21.0 * 1.36),
+        pickCardPlace = sans(12.5),
+        pickCardKm = serif(KoFestFonts.CormorantGaramond, 13.0),
+        pickBadge = sans(11.0, FontWeight.SemiBold),
     )
 }
 

@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -451,3 +452,94 @@ fun LanguageNotice(
     }
 }
 
+
+/**
+ * 홈의 '오늘 뭐하지' 한 칸 (기획서 11 · `.pkbox`).
+ *
+ * 바탕을 자주 그라데이션으로 두어 주변 섹션과 다르게 — 눈에 걸려야 한다.
+ * 왼쪽엔 뒤집힌 카드 두 장이 겹친 그림. 뽑는 것임을 알린다.
+ */
+@Composable
+fun PickBox(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = strings()
+    val shape = RoundedCornerShape(16.dp)
+
+    Row(
+        modifier = modifier
+            .padding(horizontal = KoFestDimens.ScreenMargin)
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(KoFestColors.BlankTop, KoFestColors.BlankBottom),
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end = androidx.compose.ui.geometry.Offset(1000f, 580f),
+                ),
+            )
+            .clickable(onClick = onClick)
+            .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(modifier = Modifier.width(75.dp).height(99.dp)) {
+            // 뒤에 반쯤 비치는 두 번째 장
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .width(68.dp)
+                    .height(92.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp)),
+            )
+            Box(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .width(68.dp)
+                    .height(92.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(KoFestColors.PickCardTop, KoFestColors.PickCardBottom),
+                            start = androidx.compose.ui.geometry.Offset.Zero,
+                            end = androidx.compose.ui.geometry.Offset(370f, 1000f),
+                        ),
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                com.mosstis.kofest.feature.festival.pick.FireworkMark(
+                    size = 34.dp,
+                    modifier = Modifier.alpha(0.85f),
+                )
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = s.pick.title,
+                style = KoFestTheme.type.pickBoxTitle,
+                color = KoFestColors.Paper,
+            )
+            Spacer(Modifier.height(5.dp))
+            Text(
+                text = s.pick.homeLead,
+                style = KoFestTheme.type.pickBoxBody,
+                color = Color.White.copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.height(11.dp))
+            Text(
+                text = s.pick.homeCta,
+                style = KoFestTheme.type.pickBoxCta,
+                color = KoFestColors.Jaju,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(KoFestColors.Paper)
+                    .padding(horizontal = 18.dp, vertical = 9.dp),
+            )
+        }
+    }
+}

@@ -14,6 +14,7 @@ import com.mosstis.kofest.domain.festival.model.PlaceFilter
 import com.mosstis.kofest.domain.festival.repository.FestivalDataException
 import com.mosstis.kofest.domain.festival.usecase.GetFestivalsUseCase
 import com.mosstis.kofest.domain.festival.usecase.GetPlacesUseCase
+import com.mosstis.kofest.domain.festival.usecase.GetRegionsUseCase
 import com.mosstis.kofest.domain.festival.usecase.GetMonthFestivalsUseCase
 import com.mosstis.kofest.domain.festival.usecase.SetLanguageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,7 @@ class ListViewModel @Inject constructor(
     private val getFestivals: GetFestivalsUseCase,
     private val getMonthFestivals: GetMonthFestivalsUseCase,
     private val getPlaces: GetPlacesUseCase,
+    private val getRegions: GetRegionsUseCase,
     private val setLanguage: SetLanguageUseCase,
     private val tracker: EventTracker,
     repository: FestivalRepository,
@@ -58,6 +60,8 @@ class ListViewModel @Inject constructor(
 
     private var loadJob: Job? = null
     private var loadMoreJob: Job? = null
+    private var placesJob: Job? = null
+    private var loadMorePlacesJob: Job? = null
 
     init {
         tracker.track(AppEvent.VIEW_LIST)
@@ -92,7 +96,45 @@ class ListViewModel @Inject constructor(
 
             is ListContract.Action.SelectRegion -> {
                 tracker.track(AppEvent.FILTER_REGION)
+                updateState { copy(sheet = null) }
                 applyFilter(currentState.filter.copy(regionCodes = action.regionCodes))
+                // 관광 탭도 같은 지역 필터를 쓴다. 열어본 적이 있으면 다시 받는다.
+                if (currentState.placeSections.isNotEmpty() || currentState.tab == ListContract.Tab.PLACE) loadPlaces()
+            }
+
+            is ListContract.Action.OpenSheet -> {
+                updateState { copy(sheet = action.sheet) }
+                if (action.sheet == ListContract.Sheet.REGION && currentState.regions.isEmpty()) loadRegions()
+            }
+
+            ListContract.Action.CloseSheet -> updateState { copy(sheet = null) }
+
+            ListContract.Action.RetryRegions -> loadRegions()
+
+            is ListContract.Action.SelectPeriod -> {
+                updateState { copy(sheet = null) }
+                val thisMonth = YearMonth.from(LocalDate.now())
+                val month = when (action.period) {
+                    ListContract.Period.ALL -> null
+                    ListContract.Period.THIS_MONTH -> thisMonth
+                    ListContract.Period.NEXT_MONTH -> thisMonth.plusMonths(1)
+                }
+                applyFilter(
+                    filter = currentState.filter.copy(from = month?.atDay(1), to = month?.atEndOfMonth()),
+                    scrollToMonth = month?.atDay(1),
+                )
+            }
+
+            ListContract.Action.OpenDateRange -> updateState { copy(sheet = null, showDateRange = true) }
+
+            ListContract.Action.CloseDateRange -> updateState { copy(showDateRange = false) }
+
+            is ListContract.Action.SelectDateRange -> {
+                updateState { copy(showDateRange = false) }
+                applyFilter(
+                    filter = currentState.filter.copy(from = action.from, to = action.to),
+                    scrollToMonth = action.from.withDayOfMonth(1),
+                )
             }
 
             ListContract.Action.ToggleThisMonth -> {
@@ -148,7 +190,7 @@ class ListViewModel @Inject constructor(
             }
 
             is ListContract.Action.SelectPlaceType -> {
-                updateState { copy(placeFilter = placeFilter.copy(type = action.type)) }
+                updateState { copy(sheet = null, placeFilter = placeFilter.copy(type = action.type)) }
                 loadPlaces()
             }
 
@@ -161,17 +203,33 @@ class ListViewModel @Inject constructor(
         }
     }
 
+    private fun loadRegions() {
+        updateState { copy(isLoadingRegions = true, regionsFailed = false) }
+        launchCatching(
+            onError = { throwable ->
+                updateState { copy(isLoadingRegions = false, regionsFailed = true) }
+                android.util.Log.w(TAG, "시도 목록 조회 실패", throwable)
+            },
+        ) {
+            val regions = getRegions(currentState.language)
+            updateState { copy(regions = regions, isLoadingRegions = false) }
+        }
+    }
+
     private fun loadPlaces() {
+        placesJob?.cancel()
+        loadMorePlacesJob?.cancel()
         updateState {
             copy(
                 isLoadingPlaces = true,
+                isLoadingMorePlaces = false,
                 placesNotReady = false,
                 placesFailed = false,
                 placeSections = emptyList(),
                 placeCursor = null,
             )
         }
-        launchCatching(onError = ::onPlacesError) {
+        placesJob = launchCatching(onError = ::onPlacesError) {
             val language = currentState.language
             // 관광지 필터는 지역 하나만 보낸다 — 서버가 여럿을 받지 않는다.
             val filter = currentState.placeFilter.copy(
@@ -191,18 +249,28 @@ class ListViewModel @Inject constructor(
 
     private fun loadMorePlaces() {
         val cursor = currentState.placeCursor ?: return
-        if (currentState.isLoadingPlaces) return
+        // 스크롤 중에는 같은 액션이 프레임마다 온다. 받는 중이면 같은 페이지를 또 부르지 않는다 —
+        // 같은 페이지가 두 번 붙으면 LazyColumn 키가 겹쳐 앱이 죽는다 (2026-09-12 실기기).
+        if (currentState.isLoadingPlaces || currentState.isLoadingMorePlaces) return
 
-        launchCatching(
-            onError = { throwable -> android.util.Log.w(TAG, "관광지 다음 페이지 실패", throwable) },
+        updateState { copy(isLoadingMorePlaces = true) }
+        loadMorePlacesJob = launchCatching(
+            onError = { throwable ->
+                updateState { copy(isLoadingMorePlaces = false) }
+                android.util.Log.w(TAG, "관광지 다음 페이지 실패", throwable)
+            },
         ) {
             val filter = currentState.placeFilter.copy(
                 regionCode = currentState.filter.primaryRegionCode,
             )
             val page = getPlaces(currentState.language, filter, cursor = cursor)
             updateState {
-                val merged = placeSections.flatMap { it.places } + page.items
-                copy(placeSections = merged.toPlaceSections(), placeCursor = page.nextCursor)
+                val merged = (placeSections.flatMap { it.places } + page.items).distinctBy { it.contentId }
+                copy(
+                    placeSections = merged.toPlaceSections(),
+                    placeCursor = page.nextCursor,
+                    isLoadingMorePlaces = false,
+                )
             }
         }
     }
@@ -211,7 +279,12 @@ class ListViewModel @Inject constructor(
         // 서버에 아직 없는 것과 진짜 실패를 나눈다.
         val notReady = throwable is FestivalDataException.NotReady
         updateState {
-            copy(isLoadingPlaces = false, placesNotReady = notReady, placesFailed = !notReady)
+            copy(
+                isLoadingPlaces = false,
+                isLoadingMorePlaces = false,
+                placesNotReady = notReady,
+                placesFailed = !notReady,
+            )
         }
         android.util.Log.w(TAG, if (notReady) "관광지 API 가 아직 없다" else "관광지 조회 실패", throwable)
     }
@@ -253,7 +326,7 @@ class ListViewModel @Inject constructor(
                 items.none { it.startDate.withDayOfMonth(1) == scrollToMonth }
             ) {
                 page = getFestivals(language, filter, cursor = page.nextCursor)
-                items = items + page.items
+                items = (items + page.items).distinctBy { it.contentId }
                 extraPages++
             }
 
@@ -285,7 +358,8 @@ class ListViewModel @Inject constructor(
         ) {
             val page = getFestivals(currentState.language, currentState.filter, cursor = cursor)
             updateState {
-                val merged = sections.flatMap { it.festivals } + page.items
+                // 04:00 배치로 데이터가 바뀌면 커서 경계에서 같은 항목이 다시 올 수 있다. 키가 겹치면 죽는다.
+                val merged = (sections.flatMap { it.festivals } + page.items).distinctBy { it.contentId }
                 copy(
                     sections = merged.toMonthSections(),
                     nextCursor = page.nextCursor,

@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 오늘 뭐하지(기획서 11). 버튼을 누를 때 묻고, 좌표는 뽑는 데만 쓰고 버린다 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:name="com.mosstis.kofest.KoFestApplication"

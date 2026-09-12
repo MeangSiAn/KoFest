@@ -111,6 +111,10 @@ fun FilterBar(
     modifier: Modifier = Modifier,
     /** 관광 탭에서는 false — 관광지에는 기간이 없다 */
     showPeriodFilters: Boolean = true,
+    /** 관광 탭의 유형 칩. 축제 탭에는 없다 */
+    typeLabel: String? = null,
+    typeSelected: Boolean = false,
+    onType: () -> Unit = {},
 ) {
     val s = strings()
 
@@ -126,6 +130,8 @@ fun FilterBar(
             if (showPeriodFilters) {
                 FilterChip(periodLabel, periodSelected, hasMenu = true, onClick = onPeriod)
                 FilterChip(s.filter.ongoing, ongoingSelected, hasMenu = false, onClick = onOngoing)
+            } else if (typeLabel != null) {
+                FilterChip(typeLabel, typeSelected, hasMenu = true, onClick = onType)
             }
             FilterChip(s.filter.hasImage, hasImageSelected, hasMenu = false, onClick = onHasImage)
         }

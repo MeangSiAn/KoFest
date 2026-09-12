@@ -102,6 +102,8 @@ class HomeViewModel @Inject constructor(
 
             HomeContract.Action.OpenMagazine -> sendEffect(HomeContract.Effect.NavigateToMagazine)
 
+            HomeContract.Action.OpenPick -> sendEffect(HomeContract.Effect.NavigateToPick)
+
             HomeContract.Action.OpenAllFestivals ->
                 sendEffect(HomeContract.Effect.NavigateToList())
 

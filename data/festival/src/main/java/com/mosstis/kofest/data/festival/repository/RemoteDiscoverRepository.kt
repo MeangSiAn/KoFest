@@ -6,6 +6,7 @@ import com.mosstis.kofest.data.festival.mapper.toDomain
 import com.mosstis.kofest.data.festival.mapper.toDomainOrNull
 import com.mosstis.kofest.data.festival.remote.KoFestApi
 import com.mosstis.kofest.data.festival.remote.apiCall
+import com.mosstis.kofest.domain.festival.model.PickResult
 import com.mosstis.kofest.domain.festival.model.PlaceDetail
 import com.mosstis.kofest.domain.festival.model.PlaceFilter
 import com.mosstis.kofest.domain.festival.model.PlacePage
@@ -14,6 +15,7 @@ import com.mosstis.kofest.domain.festival.model.StoryContent
 import com.mosstis.kofest.domain.festival.model.StoryPage
 import com.mosstis.kofest.domain.festival.model.TravelPlan
 import com.mosstis.kofest.domain.festival.model.TravelPlanRequest
+import com.mosstis.kofest.domain.festival.repository.PickRepository
 import com.mosstis.kofest.domain.festival.repository.PlaceRepository
 import com.mosstis.kofest.domain.festival.repository.PlanRepository
 import com.mosstis.kofest.domain.festival.repository.StoryRepository
@@ -32,7 +34,7 @@ import javax.inject.Singleton
 class RemoteDiscoverRepository @Inject constructor(
     private val api: KoFestApi,
     private val json: Json,
-) : PlaceRepository, StoryRepository, PlanRepository {
+) : PlaceRepository, StoryRepository, PlanRepository, PickRepository {
 
     override suspend fun getPlaces(
         language: AppLanguage,
@@ -104,6 +106,20 @@ class RemoteDiscoverRepository @Inject constructor(
             from = request.from.format(DateTimeFormatter.ISO_LOCAL_DATE),
             nights = request.nights,
             mood = request.mood.code,
+        ).toDomain()
+    }
+
+    override suspend fun pick(
+        language: AppLanguage,
+        latitude: Double,
+        longitude: Double,
+        exclude: List<Long>,
+    ): PickResult = apiCall(json) {
+        api.pick(
+            lang = language.code,
+            lat = latitude,
+            lng = longitude,
+            exclude = exclude.takeIf { it.isNotEmpty() }?.joinToString(","),
         ).toDomain()
     }
 }

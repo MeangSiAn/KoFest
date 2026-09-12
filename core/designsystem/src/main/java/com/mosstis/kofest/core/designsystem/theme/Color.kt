@@ -69,4 +69,17 @@ object KoFestColors {
     // "언제든 갈 수 있는 곳"과 "그날뿐인 것"을 구분하기 위한 것이다 (기획서 08).
     val PlaceTagInk = Color(0xFF2C5138)
     val PlaceTagBackground = Color(0xFFEAF2EC)
+
+    // 오늘 뭐하지 (기획서 11). 홈 위젯 바탕은 BlankTop→BlankBottom 을 그대로 쓴다
+    /** 위젯 안 뒤집힌 카드 `linear-gradient(158deg, #7A2A40, #521A2A)` */
+    val PickCardTop = Color(0xFF7A2A40)
+    val PickCardBottom = Color(0xFF521A2A)
+    /** 카드 위 폭죽 마크 */
+    val PickMark = Color(0xFFE8B23C)
+    /** 결과 카드 아래쪽 그늘 `rgba(20,8,12)` */
+    val PickShade = Color(0xFF14080C)
+    /** 결과 카드 유형 배지 바탕 `rgba(30,12,18,.55)` */
+    val PickBadgeScrim = Color(0xFF1E0C12)
+    /** 위치 거부 안내 글자색 */
+    val PickDenied = Color(0xFF9A3232)
 }

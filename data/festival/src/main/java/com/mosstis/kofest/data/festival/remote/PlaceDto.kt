@@ -45,3 +45,34 @@ data class PlaceDetailResponse(
 data class PlaceOverviewDto(
     val overview: String? = null,
 )
+
+/**
+ * `GET /api/pick` (개발문서 · 기획서 11). 2026-09-12 실제 응답으로 확인했다.
+ *
+ * `place` 가 null 이면 `exhausted` 로 이유가 갈린다 — true 는 다 본 것, false 는 반경 안에 없는 것.
+ */
+@Serializable
+data class PickResponse(
+    val place: PickPlaceDto? = null,
+    val km: Int = 0,
+    val total: Int = 0,
+    val seen: Int = 0,
+    val exhausted: Boolean = false,
+)
+
+/** [PlaceDto] 에 거리(`km`)가 붙은 것. 서버가 좌표로 계산해 준다 */
+@Serializable
+data class PickPlaceDto(
+    val contentId: Long = 0,
+    val title: String = "",
+    val type: Int = 0,
+    val typeName: String? = null,
+    val region: String? = null,
+    val district: String? = null,
+    val addr: String? = null,
+    val thumbUrl: String? = null,
+    val imageUrl: String? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val km: Double = 0.0,
+)

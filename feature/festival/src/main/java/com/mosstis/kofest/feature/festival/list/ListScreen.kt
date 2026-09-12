@@ -20,8 +20,10 @@ import com.mosstis.kofest.core.common.AppLanguage
 import com.mosstis.kofest.core.designsystem.theme.KoFestColors
 import com.mosstis.kofest.core.ui.strings.fill
 import com.mosstis.kofest.core.ui.strings.strings
+import com.mosstis.kofest.domain.festival.model.RegionBucket
 import com.mosstis.kofest.domain.festival.model.RegionGroup
 import com.mosstis.kofest.feature.festival.common.EmptyState
+import com.mosstis.kofest.feature.festival.common.FestivalFormat
 import com.mosstis.kofest.feature.festival.common.OfflineBand
 import java.time.LocalDate
 
@@ -63,7 +65,7 @@ fun ListScreen(
         onAction(ListContract.Action.ScrollHandled)
     }
 
-    val regionLabel = regionLabelOf(uiState.filter.regionCodes)
+    val regionLabel = regionLabelOf(uiState.filter.regionCodes, uiState.regions)
     // 검색에서 '전체 보기' 로 넘어왔으면 검색어가 제목이다.
     val query = uiState.filter.query
     val title = when {
@@ -97,23 +99,33 @@ fun ListScreen(
             OfflineBand(message = s.error.offline.fill("time" to "—"))
         }
 
+        val periodLabel = when (uiState.period) {
+            ListContract.Period.THIS_MONTH -> s.filter.thisMonth
+            ListContract.Period.NEXT_MONTH -> s.filter.nextMonth
+            ListContract.Period.ALL -> uiState.customRange
+                ?.let { FestivalFormat.dateRange(it, uiState.language) }
+                ?: s.filter.period
+        }
         FilterBar(
             regionLabel = regionLabel ?: s.filter.regionAll,
             // 지역은 '전국'이라도 항상 값이 있는 필터라 켜진 상태로 보인다.
             regionSelected = true,
-            periodLabel = s.filter.thisMonth,
+            periodLabel = periodLabel,
             periodSelected = uiState.filter.from != null,
             ongoingSelected = uiState.filter.ongoingOnly,
             hasImageSelected = uiState.filter.hasImageOnly,
-            // TODO(filter): 지역·시기는 2단계 선택 시트가 필요하다. 지금은 전국↔최근 선택 토글로 둔다.
-            onRegion = { onAction(ListContract.Action.SelectRegion(emptyList())) },
-            onPeriod = { onAction(ListContract.Action.ToggleThisMonth) },
+            // 지역·시기·유형은 선택 시트로 고른다 (기획서 03 · 필터). `ListFilterSheets` 가 그린다.
+            onRegion = { onAction(ListContract.Action.OpenSheet(ListContract.Sheet.REGION)) },
+            onPeriod = { onAction(ListContract.Action.OpenSheet(ListContract.Sheet.PERIOD)) },
             onOngoing = { onAction(ListContract.Action.ToggleOngoing) },
             onHasImage = { onAction(ListContract.Action.ToggleHasImage) },
-            // 관광 탭 목업(기획서 03)에는 "사진 있는 것" 칩만 있다. 달력 보기는 목록과 필터를 그대로 공유한다.
-            // TODO(place): 관광 유형 필터(12/14/28/38/39) 선택 시트. `Action.SelectPlaceType` 은 이미 있다.
+            // 관광 탭 목업(기획서 03)에는 유형 · 사진 있는 것 칩이 있다. 달력 보기는 목록과 필터를 그대로 공유한다.
             showPeriodFilters = uiState.tab == ListContract.Tab.FESTIVAL,
+            typeLabel = uiState.placeFilter.type?.let { placeTypeName(it) } ?: s.place.filterType,
+            typeSelected = uiState.placeFilter.type != null,
+            onType = { onAction(ListContract.Action.OpenSheet(ListContract.Sheet.TYPE)) },
         )
+        ListFilterSheets(uiState = uiState, onAction = onAction)
 
         if (uiState.tab == ListContract.Tab.PLACE) {
             PlaceList(uiState = uiState, onAction = onAction)
@@ -178,7 +190,7 @@ private fun ListEmpty(
     onAction: (ListContract.Action) -> Unit,
 ) {
     val s = strings()
-    val regionName = regionLabelOf(uiState.filter.regionCodes)
+    val regionName = regionLabelOf(uiState.filter.regionCodes, uiState.regions)
 
     val title = if (regionName != null) {
         s.empty.noResultRegion.fill("region" to regionName)
@@ -275,6 +287,9 @@ private fun PlaceList(
                     )
                 }
             }
+            if (uiState.isLoadingMorePlaces) {
+                item(key = "place-loading-more") { FestivalRowSkeleton() }
+            }
             item(key = "place-bottom") { Spacer(Modifier.height(24.dp)) }
         }
     }
@@ -285,7 +300,7 @@ private fun PlaceList(
  * 서버가 준 이름(`"전남광주통합특별시"`)을 그대로 제목에 올리지 않기 위한 것이기도 하다.
  */
 @Composable
-private fun regionLabelOf(codes: List<String>): String? {
+private fun regionLabelOf(codes: List<String>, regions: List<RegionBucket>): String? {
     if (codes.isEmpty()) return null
     val s = strings()
     val group = RegionGroup.of(codes.first())
@@ -305,7 +320,8 @@ private fun regionLabelOf(codes: List<String>): String? {
         }
     }
     val code = codes.first()
-    return s.region[code] ?: code
+    // i18n 에 없는 코드("12" 전남광주통합특별시)는 서버가 준 이름으로. 그것도 없으면 코드 그대로
+    return s.region[code] ?: regions.firstOrNull { it.code == code }?.name ?: code
 }
 
 private const val LOAD_MORE_THRESHOLD = 3

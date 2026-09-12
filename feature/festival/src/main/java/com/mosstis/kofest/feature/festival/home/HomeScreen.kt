@@ -138,6 +138,12 @@ private fun HomeContent(
             }
         }
 
+        // 배너 바로 아래, 한 칸. "고르기 귀찮다" 는 마음은 홈을 연 첫 3초에 생긴다 (기획서 11).
+        item(key = "pick") {
+            Spacer(Modifier.height(6.dp))
+            PickBox(onClick = { onAction(HomeContract.Action.OpenPick) })
+        }
+
         // 진행중 0건이면 섹션 자체를 숨긴다.
         if (feed.ongoing.isNotEmpty()) {
             item(key = "ongoing") {

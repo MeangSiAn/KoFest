@@ -62,6 +62,8 @@ object HomeContract {
         data object OpenMagazine : Action
         data object OpenAllFestivals : Action
         data object OpenOngoing : Action
+        /** 배너 아래 '오늘 뭐하지' 위젯 (기획서 11) */
+        data object OpenPick : Action
     }
 
     sealed interface Effect : UiEffect {
@@ -75,5 +77,6 @@ object HomeContract {
         data class NavigateToPlace(val language: AppLanguage, val contentId: Long) : Effect
         data class NavigateToStory(val language: AppLanguage, val slug: String) : Effect
         data object NavigateToMagazine : Effect
+        data object NavigateToPick : Effect
     }
 }

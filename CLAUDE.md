@@ -76,8 +76,9 @@ Activity 하나마다 feature 모듈을 만들지 않는다.
 | 자동 일정 짜기 (입력 · 만드는 중 · 결과 · 다시 짜기) | 완료 — `feature/festival/plan/`, `GET /api/plan`. **MY "내 일정" 저장은 미구현** (i18n `my.trips`, `plan.save` 있음) |
 | 홈 "이번 주말" | **없앴다** — 기획서 v1 이 뺐다. 서버는 `/home.weekend` 를 계속 주지만 그리지 않는다 |
 | 홈 지역 8광역권 묶기 | 완료 — `RegionGroup` + `groupByRegion()` |
-| 검색 | **미구현** — 화면 정의가 없다 |
-| 목록 축제/관광 세그먼트 · 홈 관광지 섹션 · 관광지 상세 | **미구현** — `GET /places` 가 서버에 없다 (기획서도 [미확정]) |
+| 검색 | 완료 — `feature/festival/search/`, 상단 검색창에서 진입. `/festivals?q=` 와 `/api/places?q=` 를 나란히 부른다 |
+| 오늘 뭐하지 (홈 위젯 + 뽑기 화면) | 완료 — `feature/festival/pick/`, `GET /api/pick`. 아래 참조 |
+| 목록 필터 시트 (지역 · 시기 · 유형) | 완료 — `list/ListFilterSheets.kt`. 지역은 시도 하나(서버 필터가 시도까지), 시기는 이번 달/다음 달/기간 지정(`DateRangePicker`) |
 | 실제 API 연동 | 완료 — Retrofit + kotlinx.serialization, `RemoteFestivalRepository` |
 | 인트로 (스플래시 → 최초 1회 언어 선택) | 완료 — `feature/festival/intro/`, 건수는 `/health` 에서 실시간 |
 | 언어 선택 영구 저장 | 완료 — `data/festival/local/LanguagePreferenceStore` (DataStore) |
@@ -139,6 +140,7 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 - **탭은 바 높이(60dp)를 `fillMaxHeight()` 로 꽉 채운다.** Row 에 상하 패딩을 주고 탭을 `weight(1f)` 만 두면
   세로는 내용(37dp)만 눌리고 패딩 23dp 가 죽은 띠가 된다 — "가끔 탭이 안 눌린다" 로 나타났던 실제 버그.
   `RowScope.weight` 는 가로만 분배한다
+- 상세·검색·글 본문은 탭이 없다 (`fromRoute` 가 null). **오늘 뽑기(`pick`)만 예외로 홈 탭이 켜진 채 남는다** — 목업이 그렇다
 - 탭 이동은 `popUpTo(HOME) { saveState = true } + launchSingleTop + restoreState` 인데 **목록 탭만 `restoreState = false`** 다.
   Navigation 은 저장 상태를 목적지 ID 로 찾고 목록은 인자(`region`, `ongoing`)만 다른 같은 목적지라,
   홈에서 지역/진행중으로 들어갔던 필터 목록이 탭을 눌러도 칩까지 그대로 되살아났다 (실기기 확인). 목록 탭 = 항상 전체 축제
@@ -169,6 +171,27 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 
 - 기획서 04 에는 "위치 → 지도 앱에서 열기" 상자가 있지만, 액션 줄의 **길찾기와 같은 지도앱을 열어 겹친다**고 판단해 뺐다.
   축제 상세·관광지 상세 모두 길찾기 버튼만 남는다. `DetailMapBox` 는 삭제했다
+
+### 오늘 뭐하지 (`feature/festival/pick/`) — 기획서 11
+
+- **홈 배너 바로 아래 한 칸**(`home/HomeComponents.kt` `PickBox`)에서 들어간다. 탭이 아니다 — 다섯이 한계. 하단 탭은 홈이 켜진 채 남는다
+  (`KoFestApp` 이 `pick` 경로를 HOME 으로 취급)
+- **위치 권한은 '위치 켜고 시작하기'를 누를 때 묻는다.** 앱을 열 때 물으면 대부분 거부한다. 대략 위치만 허락해도 된다.
+  이미 허락돼 있으면 안내 화면을 건너뛰고 바로 카드다 (`LocationProvider.hasPermission()`)
+- 위치는 프레임워크 `LocationManager` 로 읽는다 (`data/festival/local/AndroidLocationProvider`). Play 위치 라이브러리는 넣지 않았다.
+  5분 안의 마지막 위치면 그대로, 없으면 8초 안에 한 번. **좌표는 ViewModel 메모리에만 있고 어디에도 저장하지 않는다.** 서버에는 소수점 5자리로 보낸다
+- 뽑기는 최소 2초 돈다 (일정 짜기와 같은 규칙). **결과는 응답이 오자마자 상태에 넣고** `isDrawing` 만 2초 버틴다 —
+  그 사이 화면이 원본 사진을 미리 받는다(`SingletonImageLoader.enqueue`). 원본이 600KB 라 느린 회선에서 5초씩 걸려 뒤집힌 카드가 빈 면이던 것을 실기기에서 겪었다.
+  카드 앞면은 썸네일을 밑에 깔고 원본을 위에 얹는다
+- 카드 각도는 `graphicsLayer` 람다 안에서만 읽는다. 컴포지션에서 읽으면 도는 동안 매 프레임 다시 그린다
+- `place == null` 이면 `exhausted` 로 문구를 가른다 — true 는 "다 보셨습니다, 처음부터?", false 는 "N km 안에 없습니다". 다음 누름은 `excluded` 를 비우고 처음부터
+- 문구(`pick.*`)는 웹 `/pick` 과 같다. 통계 이벤트는 계약에 없어 쏘지 않는다
+
+### 목록 페이징 — 같은 페이지를 두 번 붙이면 죽는다
+
+- `loadMore*` 는 스크롤 중 프레임마다 온다. **받는 중이면 같은 커서를 또 부르지 않는다** (`isLoadingMore` / `isLoadingMorePlaces`).
+  관광 탭에 이 가드가 없어 같은 페이지가 여러 번 붙었고 `LazyColumn` 키(`contentId`)가 겹쳐 앱이 죽었다 (2026-09-12 실기기, `Key "4062234" was already used`)
+- 그래도 붙일 때 `distinctBy { contentId }` 를 한 번 더 한다. 04:00 배치로 데이터가 바뀌면 커서 경계에서 같은 항목이 다시 올 수 있다
 
 ### 자동 일정 (`feature/festival/plan/`)
 

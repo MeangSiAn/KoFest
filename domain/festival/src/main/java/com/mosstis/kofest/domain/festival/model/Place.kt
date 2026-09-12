@@ -23,9 +23,19 @@ data class Place(
     val latitude: Double?,
     val longitude: Double?,
 ) {
-    /** 목록 행에 쓰는 한 줄 주소. "서울특별시 종로구 사직로 161" */
+    /**
+     * 목록 행에 쓰는 한 줄 주소. "서울특별시 종로구 사직로 161"
+     *
+     * 한국어 `addr` 은 이미 시도·시군구로 시작한다("경기도 화성시 석우동 29-3"). 그 앞에 또 붙이면
+     * "경기도 화성시 경기도 화성시 …" 가 된다 (2026-09-12 실기기). 주소가 지역으로 시작하면 주소만 쓴다.
+     */
     val fullAddress: String
-        get() = listOfNotNull(region, district, address).filter { it.isNotBlank() }.joinToString(" ")
+        get() {
+            val addr = address?.takeIf { it.isNotBlank() }
+            val head = listOfNotNull(region, district).filter { it.isNotBlank() }
+            if (addr != null && head.isNotEmpty() && addr.startsWith(head.first())) return addr
+            return (head + listOfNotNull(addr)).joinToString(" ")
+        }
 }
 
 /**

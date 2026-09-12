@@ -1,5 +1,7 @@
 package com.mosstis.kofest.data.festival.mapper
 
+import com.mosstis.kofest.data.festival.remote.PickPlaceDto
+import com.mosstis.kofest.data.festival.remote.PickResponse
 import com.mosstis.kofest.data.festival.remote.PlaceDto
 import com.mosstis.kofest.data.festival.remote.PlanDayDto
 import com.mosstis.kofest.data.festival.remote.PlanMoveDto
@@ -9,6 +11,8 @@ import com.mosstis.kofest.data.festival.remote.StoryBlockDto
 import com.mosstis.kofest.data.festival.remote.StoryDto
 import com.mosstis.kofest.data.festival.remote.ThemeDto
 import com.mosstis.kofest.data.festival.remote.ThemeItemDto
+import com.mosstis.kofest.domain.festival.model.PickResult
+import com.mosstis.kofest.domain.festival.model.PickedPlace
 import com.mosstis.kofest.domain.festival.model.Place
 import com.mosstis.kofest.domain.festival.model.Story
 import com.mosstis.kofest.domain.festival.model.StoryBlock
@@ -30,6 +34,32 @@ internal fun PlaceDto.toDomain(): Place = Place(
     imageUrl = imageUrl?.takeIf { it.isNotBlank() },
     latitude = lat,
     longitude = lng,
+)
+
+internal fun PickResponse.toDomain(): PickResult = PickResult(
+    place = place?.toDomain(),
+    km = km,
+    total = total,
+    seen = seen,
+    exhausted = exhausted,
+)
+
+/** 빈 문자열 정리는 [PlaceDto.toDomain] 과 같아야 하므로 그쪽으로 돌린다 */
+private fun PickPlaceDto.toDomain(): PickedPlace = PickedPlace(
+    place = PlaceDto(
+        contentId = contentId,
+        title = title,
+        type = type,
+        typeName = typeName,
+        region = region,
+        district = district,
+        addr = addr,
+        thumbUrl = thumbUrl,
+        imageUrl = imageUrl,
+        lat = lat,
+        lng = lng,
+    ).toDomain(),
+    km = km,
 )
 
 internal fun ThemeDto.toDomain(baseUrl: String): Theme = Theme(

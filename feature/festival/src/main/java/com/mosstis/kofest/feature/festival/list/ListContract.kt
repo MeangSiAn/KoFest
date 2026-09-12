@@ -9,6 +9,7 @@ import com.mosstis.kofest.domain.festival.model.FestivalFilter
 import com.mosstis.kofest.domain.festival.model.LanguageCounts
 import com.mosstis.kofest.domain.festival.model.Place
 import com.mosstis.kofest.domain.festival.model.PlaceFilter
+import com.mosstis.kofest.domain.festival.model.RegionBucket
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -25,6 +26,15 @@ object ListContract {
      * 축제는 날짜(월 헤더), 관광지는 지역(시도 헤더)으로 묶는다 (기획서 03).
      */
     enum class Tab { FESTIVAL, PLACE }
+
+    /** 필터 칩을 눌렀을 때 뜨는 선택 시트 (기획서 03 · 필터) */
+    enum class Sheet { REGION, PERIOD, TYPE }
+
+    /** 시기. 기간 지정은 [Action.SelectDateRange] 로 따로 온다 */
+    enum class Period { ALL, THIS_MONTH, NEXT_MONTH }
+
+    /** 관광 탭 유형 필터. TourAPI `contentTypeId` 를 그대로 쓴다 — 숙박(32)은 넣지 않는다 */
+    val PLACE_TYPES = listOf(12, 14, 28, 38, 39)
 
     /** 관광 탭의 한 덩어리. 축제의 월 헤더 자리에 시도 헤더가 온다 */
     data class PlaceSection(
@@ -83,10 +93,39 @@ object ListContract {
         val placeCursor: String? = null,
         val placeTotal: Int? = null,
         val isLoadingPlaces: Boolean = false,
+        val isLoadingMorePlaces: Boolean = false,
         /** `GET /places` 가 서버에 아직 없다. 오류가 아니라 준비 중이다 */
         val placesNotReady: Boolean = false,
         val placesFailed: Boolean = false,
+        // 필터 선택
+        val sheet: Sheet? = null,
+        /** 시도 목록. 지역 시트를 처음 열 때 `/home` 에서 받는다 — 이름과 건수를 서버가 준다 */
+        val regions: List<RegionBucket> = emptyList(),
+        val isLoadingRegions: Boolean = false,
+        val regionsFailed: Boolean = false,
+        val showDateRange: Boolean = false,
     ) : UiState {
+        /** 칩에 쓸 시기. 지정한 기간이 이번 달·다음 달과 정확히 같으면 그 이름으로 */
+        val period: Period
+            get() {
+                val from = filter.from ?: return Period.ALL
+                val to = filter.to
+                val thisMonth = YearMonth.from(LocalDate.now())
+                return when {
+                    from == thisMonth.atDay(1) && to == thisMonth.atEndOfMonth() -> Period.THIS_MONTH
+                    from == thisMonth.plusMonths(1).atDay(1) && to == thisMonth.plusMonths(1).atEndOfMonth() -> Period.NEXT_MONTH
+                    else -> Period.ALL
+                }
+            }
+
+        /** 이번 달·다음 달이 아닌 직접 고른 기간 */
+        val customRange: ClosedRange<LocalDate>?
+            get() {
+                val from = filter.from ?: return null
+                val to = filter.to ?: return null
+                return if (period == Period.ALL) from..to else null
+            }
+
         val isEmpty: Boolean get() = !isLoading && sections.isEmpty() && !hasFatalError
         val showSkeleton: Boolean get() = isLoading && sections.isEmpty()
         val hasMore: Boolean get() = nextCursor != null
@@ -109,6 +148,13 @@ object ListContract {
         /** 광역권이면 시도코드가 여럿이다. 비어 있으면 전국 */
         data class SelectRegion(val regionCodes: List<String>) : Action
         data object ToggleThisMonth : Action
+        data class OpenSheet(val sheet: Sheet) : Action
+        data object CloseSheet : Action
+        data object RetryRegions : Action
+        data class SelectPeriod(val period: Period) : Action
+        data object OpenDateRange : Action
+        data object CloseDateRange : Action
+        data class SelectDateRange(val from: LocalDate, val to: LocalDate) : Action
         data class SelectLanguage(val language: AppLanguage) : Action
         data class OpenFestival(val contentId: Long) : Action
 

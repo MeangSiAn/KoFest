@@ -1,6 +1,7 @@
 package com.mosstis.kofest.domain.festival.repository
 
 import com.mosstis.kofest.core.common.AppLanguage
+import com.mosstis.kofest.domain.festival.model.PickResult
 import com.mosstis.kofest.domain.festival.model.PlaceDetail
 import com.mosstis.kofest.domain.festival.model.PlaceFilter
 import com.mosstis.kofest.domain.festival.model.PlacePage
@@ -38,4 +39,15 @@ interface StoryRepository {
 
 interface PlanRepository {
     suspend fun getPlan(language: AppLanguage, request: TravelPlanRequest): TravelPlan
+}
+
+/** 오늘 뭐하지. 좌표는 뽑는 데만 쓰고 어디에도 남기지 않는다 */
+interface PickRepository {
+    suspend fun pick(
+        language: AppLanguage,
+        latitude: Double,
+        longitude: Double,
+        /** 이미 나온 contentId. 서버가 200개까지 받는다 */
+        exclude: List<Long>,
+    ): PickResult
 }

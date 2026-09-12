@@ -21,6 +21,7 @@ fun HomeRoute(
     onNavigateToPlace: (AppLanguage, Long) -> Unit,
     onNavigateToStory: (AppLanguage, String) -> Unit,
     onNavigateToMagazine: () -> Unit,
+    onNavigateToPick: () -> Unit,
     /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -35,6 +36,7 @@ fun HomeRoute(
     val currentOnNavigateToPlace by rememberUpdatedState(onNavigateToPlace)
     val currentOnNavigateToStory by rememberUpdatedState(onNavigateToStory)
     val currentOnNavigateToMagazine by rememberUpdatedState(onNavigateToMagazine)
+    val currentOnNavigateToPick by rememberUpdatedState(onNavigateToPick)
 
     LaunchedEffect(viewModel, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -52,6 +54,8 @@ fun HomeRoute(
                         currentOnNavigateToStory(effect.language, effect.slug)
 
                     HomeContract.Effect.NavigateToMagazine -> currentOnNavigateToMagazine()
+
+                    HomeContract.Effect.NavigateToPick -> currentOnNavigateToPick()
 
                     is HomeContract.Effect.OpenUrl -> context.openUrl(effect.url)
                 }

@@ -43,6 +43,8 @@ fun FestivalImage(
             contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
+            // 실패를 조용히 삼키지 않는다 — 어떤 URL 이 왜 안 열리는지 로그에 남긴다
+            onError = { state -> android.util.Log.w("FestivalImage", "이미지 실패 $primary", state.result.throwable) },
             loading = { BlankImage(hanja = hanja, modifier = Modifier.fillMaxSize(), hanjaSize = hanjaSize) },
             error = {
                 if (fallback != null) {

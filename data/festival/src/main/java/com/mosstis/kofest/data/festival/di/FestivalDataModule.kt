@@ -2,12 +2,15 @@ package com.mosstis.kofest.data.festival.di
 
 import com.mosstis.kofest.data.festival.analytics.QueuedEventTracker
 import com.mosstis.kofest.data.festival.local.AndroidAppVersionProvider
+import com.mosstis.kofest.data.festival.local.AndroidLocationProvider
 import com.mosstis.kofest.data.festival.repository.LocalSavedFestivalRepository
 import com.mosstis.kofest.data.festival.repository.RemoteDiscoverRepository
 import com.mosstis.kofest.data.festival.repository.RemoteFestivalRepository
 import com.mosstis.kofest.domain.festival.analytics.EventTracker
 import com.mosstis.kofest.domain.festival.repository.AppVersionProvider
 import com.mosstis.kofest.domain.festival.repository.FestivalRepository
+import com.mosstis.kofest.domain.festival.repository.LocationProvider
+import com.mosstis.kofest.domain.festival.repository.PickRepository
 import com.mosstis.kofest.domain.festival.repository.PlaceRepository
 import com.mosstis.kofest.domain.festival.repository.PlanRepository
 import com.mosstis.kofest.domain.festival.repository.StoryRepository
@@ -56,4 +59,12 @@ abstract class FestivalDataModule {
     @Binds
     @Singleton
     abstract fun bindPlanRepository(impl: RemoteDiscoverRepository): PlanRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPickRepository(impl: RemoteDiscoverRepository): PickRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLocationProvider(impl: AndroidLocationProvider): LocationProvider
 }

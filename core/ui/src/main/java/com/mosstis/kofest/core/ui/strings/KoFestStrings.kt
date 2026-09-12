@@ -26,6 +26,7 @@ data class KoFestStrings(
     val error: ErrorStrings,
     val loading: Loading,
     val place: PlaceStrings,
+    val pick: PickStrings,
     val theme: ThemeStrings,
     val story: StoryStrings,
     val plan: PlanStrings,
@@ -52,6 +53,7 @@ data class KoFestStrings(
         val seeAll: String,
         val count: String,
         val filterType: String,
+        val typeAll: String,
         val type12: String,
         val type14: String,
         val type28: String,
@@ -187,10 +189,41 @@ data class KoFestStrings(
     )
 
     data class Filter(
+        val region: String,
         val regionAll: String,
+        val period: String,
+        val periodAll: String,
         val thisMonth: String,
+        val nextMonth: String,
+        val custom: String,
         val ongoing: String,
         val hasImage: String,
+    )
+
+    /** 오늘 뭐하지 (기획서 11). 문구는 웹 `/pick` 과 같다 */
+    data class PickStrings(
+        val title: String,
+        val homeLead: String,
+        val homeCta: String,
+        val askLead: String,
+        val askBody: String,
+        val allow: String,
+        val note: String,
+        val byRegion: String,
+        val denied: String,
+        val locating: String,
+        val locationFailed: String,
+        val tapToDraw: String,
+        val draw: String,
+        val drawing: String,
+        val again: String,
+        val reset: String,
+        val go: String,
+        val count: String,
+        val away: String,
+        val none: String,
+        val all: String,
+        val fail: String,
     )
 
     data class State(
