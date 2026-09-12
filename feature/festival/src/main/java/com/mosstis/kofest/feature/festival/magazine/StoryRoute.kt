@@ -1,4 +1,4 @@
-package com.mosstis.kofest.feature.festival.calendar
+package com.mosstis.kofest.feature.festival.magazine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,25 +13,32 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.mosstis.kofest.core.common.AppLanguage
 
 @Composable
-fun CalendarRoute(
-    onNavigateToDetail: (AppLanguage, Long) -> Unit,
+fun StoryRoute(
+    onNavigateBack: () -> Unit,
+    onNavigateToFestival: (AppLanguage, Long) -> Unit,
+    onNavigateToPlace: (AppLanguage, Long) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: CalendarViewModel = hiltViewModel(),
+    viewModel: StoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentOnNavigateToDetail by rememberUpdatedState(onNavigateToDetail)
+    val currentBack by rememberUpdatedState(onNavigateBack)
+    val currentFestival by rememberUpdatedState(onNavigateToFestival)
+    val currentPlace by rememberUpdatedState(onNavigateToPlace)
 
     LaunchedEffect(viewModel, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.uiEffect.collect { effect ->
                 when (effect) {
-                    is CalendarContract.Effect.NavigateToDetail ->
-                        currentOnNavigateToDetail(effect.language, effect.contentId)
+                    StoryContract.Effect.NavigateBack -> currentBack()
+                    is StoryContract.Effect.NavigateToFestival ->
+                        currentFestival(effect.language, effect.contentId)
+                    is StoryContract.Effect.NavigateToPlace ->
+                        currentPlace(effect.language, effect.contentId)
                 }
             }
         }
     }
 
-    CalendarScreen(uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
+    StoryScreen(uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
 }

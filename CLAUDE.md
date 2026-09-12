@@ -9,7 +9,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 개발 문서는 이 저장소 밖에 있다 — 반드시 먼저 읽는다
 
-작업 시작 전 `/Users/anmyeongseong/my/kofest/kofest/` 를 읽는다. 이 저장소보다 훨씬 많은 결정이 거기 담겨 있다.
+**기준은 `/Users/anmyeongseong/my/기획서/` 다** — `KoFest_기획서_v1.html`(화면, 섹션 00~11),
+`kofest_개발문서3.md` + `적용방법.md`(서버와 주고받는 것, 최신), `kofest-i18n/{ko,en}.json`(문구 263키).
+아래 `~/my/kofest/kofest/` 는 **옛 기획서**이고 데이터·인프라 설명만 아직 유효하다. 둘이 다르면 **v1 을 따른다.**
+
+**화면 구성은 기획서를 그대로 따른다.** 기획서가 뺀 섹션을 "데이터가 아직 없어 빈자리가 보인다"는 이유로
+폴백으로 되살리거나, 기획서에 없는 숨김·조건을 넣지 않는다 — 비면 왜 비었는지 쓴다. 기획서에 정의가 없는
+상황은 바꾸지 말고 그대로 둔 채 결과를 보고한다. (2026-09-10 "이번 주말" 폴백으로 지적받은 규칙)
+
+작업 시작 전 `/Users/anmyeongseong/my/kofest/kofest/` 도 읽는다. 이 저장소보다 훨씬 많은 결정이 거기 담겨 있다.
 
 | 경로 | 내용 |
 |---|---|
@@ -36,14 +44,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 :core:ui              BaseActivity, 문구표(KoFestStrings + Ko/En + LocalStrings)
 :domain:festival      Festival / HomeFeed / FestivalFilter / FestivalRepository / UseCase
 :data:festival        FakeFestivalRepository + LanguagePreferenceStore + Hilt binding
-:feature:festival     MainActivity · 앱 셸(하단탭+NavHost) · intro / home / list / detail / calendar / my
+:feature:festival     MainActivity · 앱 셸(하단탭+NavHost) · intro / home / list(+달력·관광) / detail / place / magazine / plan / my
 ```
 
 레이어 규칙: `app → feature + data`, `feature → core + domain`, `data → domain`,
 `core:ui → core:designsystem + core:common`, `core:presentation → core:common`.
 `core → feature`, `feature A → feature B`, `feature → data` 는 금지.
 
-**화면 4개(홈·목록·달력·저장)는 모두 축제 도메인을 공유하므로 feature 모듈 하나(`:feature:festival`)에 둔다.**
+**화면들(홈·목록·달력·상세·MY)은 모두 축제 도메인을 공유하므로 feature 모듈 하나(`:feature:festival`)에 둔다.**
 Activity 하나마다 feature 모듈을 만들지 않는다.
 
 ### 구현된 것 / 안 된 것
@@ -57,9 +65,17 @@ Activity 하나마다 feature 모듈을 만들지 않는다.
 | 상태 화면 (로딩 뼈대·빈 결과·오프라인 띠) | 완료 |
 | 상세 (히어로 페이저·액션·소개·안내·프로그램·주최·사진·위치·주변) | 완료 — `feature/festival/detail/` |
 | 저장 (하트 + 저장 탭) | 완료 — DataStore 로컬 저장, `data/festival/local/` |
-| 달력 (월 격자·점 밀도·날짜 선택·월 이동/스와이프·빈 날 안내) | 완료 — `feature/festival/calendar/` |
+| 달력 (월 격자·점 밀도·날짜 선택·월 이동/스와이프·빈 날 안내) | 완료 — **목록 화면 안의 `목록 \| 달력` 전환** (`feature/festival/list/CalendarView.kt`) |
+| 통계 `POST /events` | 완료 — `domain/festival/analytics/` + `data/festival/analytics/QueuedEventTracker` |
+| 앱 설정 (`minAppVersion` · `ads`) | 부분 — `AppConfig` 로 받아 MY 의 버전 줄에 '최신/업데이트 있음'. 광고 SDK 는 미도입 |
 | MY (저장 목록·지난 축제 접기·스와이프 해제·설정·약관·앱 정보) | 완료 — `feature/festival/my/`, 저장 탭을 대체 |
 | 홈 서버 배너 | 완료 — `/home.banners`(관리자 등록) 앞, 부족분은 `BannerRule` 로 채움 |
+| 매거진 (목록 · 블록 본문) | 완료 — `feature/festival/magazine/`, `GET /api/stories` (실기기 확인) |
+| 테마 캐러셀 + 그 자리 펼침 | 완료 — `home/HomeDiscoverSections.kt`, `/home.themes` (별도 엔드포인트 없음) |
+| 관광지 (목록 관광 탭 · 상세 · 홈 "가볼 만한 여행지") | 완료 — `feature/festival/place/`, `GET /api/places`. **유형 필터 시트는 미구현** (`Action.SelectPlaceType` 만 있다) |
+| 자동 일정 짜기 (입력 · 만드는 중 · 결과 · 다시 짜기) | 완료 — `feature/festival/plan/`, `GET /api/plan`. **MY "내 일정" 저장은 미구현** (i18n `my.trips`, `plan.save` 있음) |
+| 홈 "이번 주말" | **없앴다** — 기획서 v1 이 뺐다. 서버는 `/home.weekend` 를 계속 주지만 그리지 않는다 |
+| 홈 지역 8광역권 묶기 | 완료 — `RegionGroup` + `groupByRegion()` |
 | 검색 | **미구현** — 화면 정의가 없다 |
 | 목록 축제/관광 세그먼트 · 홈 관광지 섹션 · 관광지 상세 | **미구현** — `GET /places` 가 서버에 없다 (기획서도 [미확정]) |
 | 실제 API 연동 | 완료 — Retrofit + kotlinx.serialization, `RemoteFestivalRepository` |
@@ -131,7 +147,14 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 - 인트로가 `startDestination` 이고 홈 진입 시 `popUpTo(intro) { inclusive = true }` 로 지운다. 따라서
   `navController.graph.findStartDestination()` 을 popUpTo 대상으로 쓰면 안 된다 (스택에 없다). 항상 `HOME.route` 를 쓴다
 
-### 달력 (`feature/festival/calendar/`)
+### 달력 (`feature/festival/list/CalendarView.kt`) — 탭이 아니라 목록 안의 전환
+
+- **탭이 아니다.** 기획서 05 가 목록 화면 상단의 `목록 | 달력` 세그먼트로 옮겼다. 하단 탭은 홈 · 목록 · MY 셋이다
+- 두 보기가 **같은 필터를 공유**하므로 상태도 `ListContract.State.calendar` 하나에 있고 ViewModel 도 `ListViewModel` 하나다.
+  지역을 부산으로 걸어둔 채 달력으로 바꾸면 부산 축제만 찍힌다
+- 달력은 목록의 필터를 **그대로** 쓴다 (기간만 보고 있는 달이 정한다). '진행중'은 서버가 오늘 기준으로 판단하므로
+  이 칩을 켜고 다른 달을 열면 거의 빈다 — 기획서에 정의가 없어 **감추지 않고 그대로 둔다.** 결정이 나면 그때 바꾼다
+- 달력 데이터는 **세그먼트를 눌렀을 때** 받는다. 목록만 보는 사람에게 매달 세 번씩 부르지 않는다
 
 - **월 단위로 한 번만** 부른다: `GetMonthFestivalsUseCase` 가 `from/to` 로 커서가 끝날 때까지 받는다 (상설 행사 때문에 한 달이 50건을 넘는다).
   `from/to` 를 주면 서버가 종료된 축제도 준다 → 지난 달·작년도 볼 수 있다. 이전·다음 달은 미리 받아둔다
@@ -142,6 +165,34 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 - 월을 넘기면 선택은 해제되고 목록은 그 달 전체. 영어에서는 빈 날에 "한국어로 보면 N건" 을 붙이기 위해 KO 달도 함께 받는다
 - 격자는 **월요일 시작** (기획서 M T W T F S S)
 
+### 상세 — '위치' 섹션은 없다 (2026-09-10 사용자 결정)
+
+- 기획서 04 에는 "위치 → 지도 앱에서 열기" 상자가 있지만, 액션 줄의 **길찾기와 같은 지도앱을 열어 겹친다**고 판단해 뺐다.
+  축제 상세·관광지 상세 모두 길찾기 버튼만 남는다. `DetailMapBox` 는 삭제했다
+
+### 자동 일정 (`feature/festival/plan/`)
+
+- 입력 → 만드는 중(최소 2초, i18n `plan.loading1~6` 순환) → 결과가 한 화면 안에서 바뀐다. 칩을 눌러도 다시 만들지 않고 **결과 보기**를 눌러야 부른다
+- '언제'는 기획서 09 의 상자 둘(`.pl-dbox`)이다. 왼쪽(날짜)을 누르면 Material3 `DatePickerDialog` — 오늘~6개월만 고를 수 있고,
+  확인 버튼 문구가 i18n 에 없어 날짜를 누르면 바로 반영·닫힘. 오른쪽(박수)은 `DropdownMenu` 로 당일~3박 4일
+- **`launch` 안에서 `async` 를 쓰지 않는다.** 실패한 `async` 의 예외는 부모 Job 으로 올라가 `launchCatching` 의 try/catch 를 지나쳐 **앱이 죽는다** (2026-09-10 실기기에서 겪음).
+  요청을 순차로 받고 남은 시간만 `delay` 한다
+- 결과는 저장하지 않는다. 같은 입력이면 같은 결과라 조건만 들고 있으면 된다 — MY "내 일정" 은 아직 없다
+
+### 통계 (`POST /events`)
+
+- 이벤트 이름은 **서버 계약**이다 (`domain/festival/analytics/AppEvent`). 문자열을 마음대로 바꾸지 않는다
+- 한 건씩 보내지 않는다. `QueuedEventTracker` 가 DataStore 큐에 쌓아 **20건이 되면** 보내고,
+  `MainActivity.onStop` 에서도 보낸다 — 임계치만 기다리면 한 번 쓰고 지우는 사용자의 기록이 영영 안 나간다
+- 전송 실패는 **큐를 비우지 않는다.** 다음 이벤트에 얹혀 다시 나간다. 실패는 로그로 남긴다 (조용히 삼키지 않는다)
+- `deviceId` 는 앱이 만든 UUID 다. **광고 식별자(GAID)를 쓰지 않는다** — 개인정보 처리방침에 그렇게 적혀 있다
+- 계측 지점: 화면은 각 ViewModel `init`, 언어 전환은 `SetLanguageUseCase`, 저장/해제는 `ToggleSavedFestivalUseCase`.
+  **UseCase 에 붙인 것은 진입점이 여럿이기 때문이다** (언어 전환은 헤더·MY·빈 화면 버튼 세 곳)
+- 배너 노출은 스크롤이 **멈춘 뒤**의 장만 센다. 미는 도중 스쳐 간 장까지 세면 노출 수가 부풀려진다
+- 요청 형식은 **실제로 보내 확인했다** (2026-09-10): 문서 그대로의 body 로 `200 {"accepted": 2}`. `contentId` 가 없는 이벤트도 받는다.
+  `accepted` 가 보낸 수와 다르면 경고 로그를 남긴다
+- `search` 는 검색 화면이 없어 아직 쏘는 곳이 없다
+
 ### MY (`feature/festival/my/`) — 저장 탭을 대체
 
 - 저장 목록은 **시작일 가까운 순**(저장 순 아님). 끝난 축제는 지우지 않고 "지난 축제 N" 아래로 접는다. 끝났는지는 저장 시점 `state` 가 아니라
@@ -150,6 +201,34 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 - 약관·정책 URL 은 `common/KoFestLinks.kt` 한 곳. **2026-09-08 기준 서버에 아직 없다** (404, 키 없이는 401)
 - "의견 보내기" 행은 **받을 이메일이 정해지지 않아 넣지 않았다.** 눌러도 아무 일 없는 행보다 없는 행이 낫다. 주소가 정해지면 `mailto:` 로 추가
 - 알림은 자리만 있다 — 누르면 "준비 중입니다". 권한은 첫 저장 직후에 묻는 것이 기획서 방향
+
+### 서버 — 앱용 API 는 `/api/` 아래 (개발문서3 · 적용방법.md, 2026-09-10 실제 응답 확인)
+
+```
+/festivals  /festivals/{lang}/{id}  /home  /health  /events   기존 그대로
+/api/places  /api/places/{lang}/{id}  /api/stories  /api/stories/{lang}/{slug}  /api/plan   앱용 JSON
+/  /browse  /places  /plan  /story                             ← 웹 페이지. 앱이 부르지 않는다
+```
+
+- `/places` `/plan` 은 이미 웹 화면 주소라 같은 경로에 API 를 둘 수 없었다. **접두사를 빼면 HTML 이 온다**
+- **테마는 `/home.themes` 뿐이다.** `/themes` 엔드포인트는 없다 (앱에 테마 화면이 없어 따로 부를 이유가 없다)
+- 스웨거: `https://kofest.mosstis.com/docs`. **문서에 있다고 붙이지 말고 여기서 확인한다**
+- 실제 응답이 문서와 다른 곳: `/api/plan` 에 `title` 이 없고 `areaName`·`moodName`·`days[].count` 가 온다 (제목은 앱이 `resultTitle` 로 만든다).
+  `/api/places` 커서는 `"2"` 같은 페이지 번호다. `/festivals` 에 `total` 이 없다. `ads` 는 `{enabled, listFirstIndex, listInterval, onDetail}`
+- 404 나 HTML 이 오면 `apiCall` 이 `FestivalDataException.NotReady` 로 바꾼다 — 서버가 옛 버전으로 돌아가도 앱이 죽지 않는다
+- **`notice` 의 형태를 아직 모른다.** 응답이 계속 `null`. 확인 전까지 파싱하지 않는다
+- **자동 일정 권역은 서버가 아직 7개다.** i18n 은 8개(`area.busan`)인데 `area=busan` 을 보내면 400 (적용방법.md). 앱의 `TravelPlanRequest.Area` 도 7개로 뒀다
+
+### 지역: 서버는 시도, 화면은 광역권
+
+- `/home` 의 `regions` 는 **시도 16개**를 준다. 그중 `12` 는 **"전남광주통합특별시"** — 실재하는 행정코드가 아니라
+  수집 쪽 합성 값이다. 그대로 화면에 내보내면 안 된다 (기획서 09 의 전라 권역에 `12` 가 있는 이유가 이것)
+- 그래서 앱이 `RegionGroup` 으로 **8개 광역권**(서울 / 경기·인천 / 강원 / 충청 / 전라 / 경상 / 제주 / 부산·울산)으로 묶는다.
+  이름은 i18n `area.*`. **자동 일정의 권역은 7개**로 다르다 — 거기서는 부산·울산이 경상에 들어간다 (기획서 09, 서버도 7개)
+- **서버는 지역을 하나만 받는다.** `region=41,28` 은 0건, `region=41&region=28` 은 뒤엣것만 먹는다.
+  그래서 광역권을 누르면 `RemoteFestivalRepository.getMergedFestivals` 가 시도별로 부른 뒤 합친다.
+  커서가 `"2026-10-15|293084"` = `(start_date, content_id)` 이고 정렬이 모든 지역에서 같아서
+  **합친 결과의 마지막 항목 하나로 모든 시도의 다음 커서를 만들 수 있다** — 시도별 커서를 따로 들고 다니지 않는다
 
 ### 인트로 (`feature/festival/intro/`)
 

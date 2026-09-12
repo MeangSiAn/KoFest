@@ -1,6 +1,7 @@
 package com.mosstis.kofest.domain.festival.repository
 
 import com.mosstis.kofest.core.common.AppLanguage
+import com.mosstis.kofest.domain.festival.model.AppConfig
 import com.mosstis.kofest.domain.festival.model.FestivalFilter
 import com.mosstis.kofest.domain.festival.model.FestivalPage
 import com.mosstis.kofest.domain.festival.model.FestivalDetail
@@ -42,6 +43,13 @@ interface FestivalRepository {
 
     /** 마지막으로 데이터를 성공적으로 받은 시각. 네트워크 실패 시 안내 띠에 쓴다 */
     val lastSyncedAt: Flow<Instant?>
+
+    /**
+     * 서버가 `GET /home` 에 실어 보내는 앱 설정. 홈을 부르기 전에는 null 이다.
+     *
+     * 따로 부르는 엔드포인트가 없다 — 홈 응답에 얹혀 오므로 홈을 여는 순간 갱신된다.
+     */
+    val appConfig: Flow<AppConfig?>
 
     suspend fun getHomeFeed(language: AppLanguage): HomeFeed
 

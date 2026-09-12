@@ -245,7 +245,7 @@ private fun LanguageContent(
             LanguageOption(
                 name = "한국어",
                 description = s.langKoLabel,
-                count = uiState.counts?.ko,
+                count = uiState.counts?.ko?.festival,
                 selected = uiState.selected == AppLanguage.KO,
                 onClick = { onAction(IntroContract.Action.SelectLanguage(AppLanguage.KO)) },
             )
@@ -253,7 +253,7 @@ private fun LanguageContent(
             LanguageOption(
                 name = "English",
                 description = s.langEnLabel,
-                count = uiState.counts?.en,
+                count = uiState.counts?.en?.festival,
                 selected = uiState.selected == AppLanguage.EN,
                 onClick = { onAction(IntroContract.Action.SelectLanguage(AppLanguage.EN)) },
             )

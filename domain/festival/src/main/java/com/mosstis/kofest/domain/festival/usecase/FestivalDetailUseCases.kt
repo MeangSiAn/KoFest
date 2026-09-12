@@ -1,6 +1,8 @@
 package com.mosstis.kofest.domain.festival.usecase
 
 import com.mosstis.kofest.core.common.AppLanguage
+import com.mosstis.kofest.domain.festival.analytics.AppEvent
+import com.mosstis.kofest.domain.festival.analytics.EventTracker
 import com.mosstis.kofest.domain.festival.model.Festival
 import com.mosstis.kofest.domain.festival.model.FestivalDetail
 import com.mosstis.kofest.domain.festival.model.SavedFestival
@@ -31,7 +33,14 @@ class IsFestivalSavedUseCase @Inject constructor(
 
 class ToggleSavedFestivalUseCase @Inject constructor(
     private val repository: SavedFestivalRepository,
+    private val tracker: EventTracker,
 ) {
-    suspend operator fun invoke(language: AppLanguage, festival: Festival): Boolean =
-        repository.toggle(language, festival)
+    suspend operator fun invoke(language: AppLanguage, festival: Festival): Boolean {
+        val nowSaved = repository.toggle(language, festival)
+        tracker.track(
+            event = if (nowSaved) AppEvent.SAVE else AppEvent.UNSAVE,
+            contentId = festival.contentId,
+        )
+        return nowSaved
+    }
 }

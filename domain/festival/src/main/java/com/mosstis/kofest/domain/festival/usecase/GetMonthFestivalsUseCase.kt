@@ -15,16 +15,23 @@ import javax.inject.Inject
  * 커서가 끝날 때까지 이어 받되 [MAX_PAGES] 로 상한을 둔다.
  *
  * `from`/`to` 를 주면 서버가 종료된 축제도 내려준다 (실제 응답으로 확인). 지난 달도 볼 수 있다.
+ *
+ * [filter] 는 목록 화면이 걸어둔 것을 그대로 받는다 — 달력은 목록 안의 전환이라 필터를 공유한다.
+ * 기간만은 달력이 정한다. 보고 있는 달이 곧 기간이다.
  */
 class GetMonthFestivalsUseCase @Inject constructor(
     private val repository: FestivalRepository,
 ) {
-    suspend operator fun invoke(language: AppLanguage, month: YearMonth): List<Festival> {
-        val filter = FestivalFilter(from = month.atDay(1), to = month.atEndOfMonth())
+    suspend operator fun invoke(
+        language: AppLanguage,
+        month: YearMonth,
+        filter: FestivalFilter = FestivalFilter(),
+    ): List<Festival> {
+        val monthFilter = filter.copy(from = month.atDay(1), to = month.atEndOfMonth())
         val items = mutableListOf<Festival>()
         var cursor: String? = null
         repeat(MAX_PAGES) {
-            val page = repository.getFestivals(language, filter, cursor, PAGE_SIZE)
+            val page = repository.getFestivals(language, monthFilter, cursor, PAGE_SIZE)
             items += page.items
             cursor = page.nextCursor ?: return items.distinctBy { it.contentId }
         }

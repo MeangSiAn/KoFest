@@ -6,14 +6,30 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mosstis.kofest.core.common.AppLanguage
 import com.mosstis.kofest.core.ui.base.BaseActivity
+import com.mosstis.kofest.domain.festival.analytics.EventTracker
 import com.mosstis.kofest.feature.festival.shell.AppViewModel
 import com.mosstis.kofest.feature.festival.shell.KoFestApp
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
 
     private val viewModel: AppViewModel by viewModels()
+
+    @Inject
+    lateinit var eventTracker: EventTracker
+
+    /**
+     * 쌓인 이벤트를 화면 밖으로 나갈 때 올린다.
+     *
+     * 임계치(20건)만 기다리면 한 번 쓰고 지우는 사용자의 기록이 영영 안 나간다.
+     * 여행 중 잠깐 쓰는 앱이라 그런 세션이 오히려 많다.
+     */
+    override fun onStop() {
+        super.onStop()
+        eventTracker.flush()
+    }
 
     /**
      * 선택한 언어가 테마의 서체 역할과 문구표를 함께 바꾸므로 Activity 에서 읽어 내려준다.

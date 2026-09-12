@@ -219,14 +219,7 @@ private fun DetailContent(
             }
         }
 
-        // ── 위치 ──
-        if (detail.hasCoordinates) {
-            item(key = "location") {
-                DetailSection(title = s.detail.location) {
-                    DetailMapBox(onClick = { onAction(DetailContract.Action.OpenDirections) })
-                }
-            }
-        }
+        // '위치' 섹션은 두지 않는다 — 액션 줄의 '길찾기'와 같은 지도앱을 열어 겹친다 (2026-09-10 사용자 결정, 기획서 04 에는 있음).
 
         // ── 주변 축제 ──
         if (detail.nearby.isNotEmpty()) {

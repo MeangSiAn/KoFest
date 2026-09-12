@@ -19,6 +19,8 @@ object MyContract {
         val isLoading: Boolean = true,
         /** 이미지 캐시 크기. 아직 못 쟀으면 null */
         val cacheBytes: Long? = null,
+        /** 서버의 `minAppVersion` 이 설치된 버전보다 높다. 홈을 한 번 부른 뒤에야 알 수 있다 */
+        val updateAvailable: Boolean = false,
         val showLanguageDialog: Boolean = false,
         val showClearCacheDialog: Boolean = false,
     ) : UiState {

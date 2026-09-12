@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.mosstis.kofest.core.presentation.base.BaseViewModel
 import com.mosstis.kofest.domain.festival.repository.FestivalRepository
 import com.mosstis.kofest.domain.festival.usecase.ObserveSavedFestivalsUseCase
+import com.mosstis.kofest.domain.festival.usecase.ObserveUpdateAvailableUseCase
 import com.mosstis.kofest.domain.festival.usecase.SetLanguageUseCase
 import com.mosstis.kofest.domain.festival.usecase.ToggleSavedFestivalUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MyViewModel @Inject constructor(
     observeSaved: ObserveSavedFestivalsUseCase,
+    observeUpdateAvailable: ObserveUpdateAvailableUseCase,
     private val toggleSaved: ToggleSavedFestivalUseCase,
     private val setLanguage: SetLanguageUseCase,
     repository: FestivalRepository,
@@ -25,6 +27,10 @@ class MyViewModel @Inject constructor(
 ) {
 
     init {
+        observeUpdateAvailable()
+            .onEach { available -> updateState { copy(updateAvailable = available) } }
+            .launchIn(viewModelScope)
+
         combine(repository.language, observeSaved()) { language, saved ->
             language to saved.filter { it.language == language }
         }

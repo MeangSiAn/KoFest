@@ -418,34 +418,6 @@ fun DetailGallery(
     }
 }
 
-/** 지도를 앱 안에 넣지 않는다 — 외부 지도앱으로 넘기면 API 비용이 0 이고 길찾기까지 이어진다. */
-@Composable
-fun DetailMapBox(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(KoFestDimens.DetailMapBoxHeight)
-            .clip(RoundedCornerShape(2.dp))
-            .border(1.dp, KoFestColors.Line, RoundedCornerShape(2.dp))
-            .background(KoFestColors.MapBoxBackground)
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = KoFestIcons.Directions,
-            contentDescription = null,
-            tint = KoFestColors.Jaju,
-            modifier = Modifier.size(22.dp),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = strings().detail.openInMaps,
-            style = KoFestTheme.type.rowPlace,
-            color = KoFestColors.Muted,
-        )
-    }
-}
 
 /**
  * 주변 축제. 이미 가진 데이터로 만들 수 있고 API 호출이 0 이라

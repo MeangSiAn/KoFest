@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mosstis.kofest.core.designsystem.theme.KoFestColors
 import com.mosstis.kofest.core.designsystem.theme.KoFestDimens
@@ -60,7 +61,8 @@ fun KoFestBottomBar(
         ) {
             Tab(KoFestDestination.HOME, KoFestIcons.Home, labels.home, current, onSelect, Modifier.weight(1f))
             Tab(KoFestDestination.LIST, KoFestIcons.List, labels.list, current, onSelect, Modifier.weight(1f))
-            Tab(KoFestDestination.CALENDAR, KoFestIcons.Calendar, labels.calendar, current, onSelect, Modifier.weight(1f))
+            Tab(KoFestDestination.PLAN, KoFestIcons.Plan, labels.plan, current, onSelect, Modifier.weight(1f))
+            Tab(KoFestDestination.MAGAZINE, KoFestIcons.Magazine, labels.story, current, onSelect, Modifier.weight(1f))
             Tab(KoFestDestination.MY, KoFestIcons.My, labels.saved, current, onSelect, Modifier.weight(1f))
         }
     }
@@ -93,9 +95,16 @@ private fun Tab(
             imageVector = icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(20.dp),
+            // 탭이 다섯이라 기획서가 아이콘을 19dp 로 줄였다. 더 늘릴 자리가 없으므로 탭을 더 만들지 않는다.
+            modifier = Modifier.size(19.dp),
         )
-        Text(text = label, style = KoFestTheme.type.tabLabel, color = tint)
+        Text(
+            text = label,
+            style = KoFestTheme.type.tabLabel,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

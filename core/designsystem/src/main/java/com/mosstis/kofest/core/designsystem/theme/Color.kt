@@ -64,4 +64,9 @@ object KoFestColors {
     val CalendarToday = Color(0xFFF3EBEC)
 
     val OnJaju = Color(0xFFFFFFFF)
+
+    // 테마에 담긴 항목의 종류 표. 축제는 자주로 채우고, 관광지는 이 초록을 쓴다 —
+    // "언제든 갈 수 있는 곳"과 "그날뿐인 것"을 구분하기 위한 것이다 (기획서 08).
+    val PlaceTagInk = Color(0xFF2C5138)
+    val PlaceTagBackground = Color(0xFFEAF2EC)
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mosstis.kofest.core.common.AppLanguage
 import com.mosstis.kofest.core.designsystem.component.OnNowLabel
+import com.mosstis.kofest.core.designsystem.component.PillSegment
 import com.mosstis.kofest.core.designsystem.component.SkeletonBlock
 import com.mosstis.kofest.core.designsystem.theme.KoFestColors
 import com.mosstis.kofest.core.designsystem.theme.KoFestDimens
@@ -36,6 +37,7 @@ import com.mosstis.kofest.core.designsystem.theme.KoFestTheme
 import com.mosstis.kofest.core.ui.strings.strings
 import com.mosstis.kofest.domain.festival.model.Festival
 import com.mosstis.kofest.domain.festival.model.FestivalState
+import com.mosstis.kofest.domain.festival.model.Place
 import com.mosstis.kofest.feature.festival.common.FestivalFormat
 import com.mosstis.kofest.feature.festival.common.FestivalImage
 import com.mosstis.kofest.feature.festival.common.KoFestIcons
@@ -44,8 +46,12 @@ import java.time.LocalDate
 @Composable
 fun ListHeader(
     title: String,
+    mode: ListContract.Mode,
+    onSelectMode: (ListContract.Mode) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 관광 탭에서는 false. 관광지에는 기간이 없어 달력에 찍을 것이 없다 */
+    showModeSegment: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -58,7 +64,7 @@ fun ListHeader(
                 bottom = 14.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = title,
@@ -68,6 +74,16 @@ fun ListHeader(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        // 달력은 탭이 아니라 이 화면의 다른 보기다 (기획서 05). 언어 전환과 같은 세그먼트를 쓴다.
+        if (showModeSegment) {
+            PillSegment(
+                labels = listOf(strings().nav.list, strings().nav.calendar),
+                selectedIndex = if (mode == ListContract.Mode.LIST) 0 else 1,
+                onSelect = { index ->
+                    onSelectMode(if (index == 0) ListContract.Mode.LIST else ListContract.Mode.CALENDAR)
+                },
+            )
+        }
         Icon(
             imageVector = KoFestIcons.Search,
             contentDescription = strings().action.search,
@@ -93,6 +109,8 @@ fun FilterBar(
     onOngoing: () -> Unit,
     onHasImage: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 관광 탭에서는 false — 관광지에는 기간이 없다 */
+    showPeriodFilters: Boolean = true,
 ) {
     val s = strings()
 
@@ -105,8 +123,10 @@ fun FilterBar(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             FilterChip(regionLabel, regionSelected, hasMenu = true, onClick = onRegion)
-            FilterChip(periodLabel, periodSelected, hasMenu = true, onClick = onPeriod)
-            FilterChip(s.filter.ongoing, ongoingSelected, hasMenu = false, onClick = onOngoing)
+            if (showPeriodFilters) {
+                FilterChip(periodLabel, periodSelected, hasMenu = true, onClick = onPeriod)
+                FilterChip(s.filter.ongoing, ongoingSelected, hasMenu = false, onClick = onOngoing)
+            }
             FilterChip(s.filter.hasImage, hasImageSelected, hasMenu = false, onClick = onHasImage)
         }
         Box(
@@ -351,6 +371,133 @@ fun LoadingMonthHeader(modifier: Modifier = Modifier) {
             style = KoFestTheme.type.monthNumeral,
             color = KoFestColors.Jaju,
             textAlign = TextAlign.Start,
+        )
+    }
+}
+
+/**
+ * 축제 | 관광 전환. 건수를 함께 보여준다 — 기획서 03 의 "903 / 4,120".
+ *
+ * 관광지 건수는 서버가 목록 응답에 담아 줄 때만 안다. 모르면 숫자를 감춘다 (0 으로 쓰지 않는다).
+ */
+@Composable
+fun ListTabs(
+    tab: ListContract.Tab,
+    festivalCount: Int?,
+    placeCount: Int?,
+    onSelect: (ListContract.Tab) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = strings()
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = KoFestDimens.ScreenMargin)
+            .padding(bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        ListTab(s.list.tabFestival, festivalCount, tab == ListContract.Tab.FESTIVAL) {
+            onSelect(ListContract.Tab.FESTIVAL)
+        }
+        ListTab(s.list.tabPlace, placeCount, tab == ListContract.Tab.PLACE) {
+            onSelect(ListContract.Tab.PLACE)
+        }
+    }
+}
+
+@Composable
+private fun ListTab(label: String, count: Int?, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = label,
+            style = KoFestTheme.type.sectionTitle.copy(fontSize = 16.sp),
+            color = if (selected) KoFestColors.Ink else KoFestColors.Muted,
+        )
+        if (count != null) {
+            Text(
+                text = count.toString(),
+                style = KoFestTheme.type.regionCount,
+                color = if (selected) KoFestColors.Jaju else KoFestColors.Muted,
+            )
+        }
+    }
+}
+
+/** 관광지 한 줄. 날짜 열이 없고 **썸네일이 가로형**이다 — 건물과 풍경은 가로가 자연스럽다 */
+@Composable
+fun PlaceRow(place: Place, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val s = strings()
+    Column(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
+            modifier = Modifier.padding(horizontal = KoFestDimens.ScreenMargin, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                s.place.typeName(place.type)?.let { typeName ->
+                    Text(text = typeName, style = KoFestTheme.type.badge, color = KoFestColors.Muted)
+                    Spacer(Modifier.height(4.dp))
+                }
+                Text(
+                    text = place.title,
+                    style = KoFestTheme.type.rowTitle,
+                    color = KoFestColors.Ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // 기간이 없으므로 날짜 줄 자리를 주소가 쓴다.
+                val address = listOfNotNull(place.district, place.address).joinToString(" ")
+                if (address.isNotBlank()) {
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        text = address,
+                        style = KoFestTheme.type.rowPlace,
+                        color = KoFestColors.Muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            FestivalImage(
+                url = place.thumbUrl ?: place.imageUrl,
+                title = place.title,
+                hanjaSize = 24.sp,
+                modifier = Modifier
+                    .size(width = 104.dp, height = 78.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+            )
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(KoFestDimens.HairlineThickness)
+                .background(KoFestColors.Line),
+        )
+    }
+}
+
+/** 관광 탭의 지역 헤더. 축제의 월 헤더와 같은 자리를 쓴다 */
+@Composable
+fun PlaceRegionHeader(region: String, count: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(KoFestColors.Paper)
+            .padding(horizontal = KoFestDimens.ScreenMargin)
+            .padding(top = 22.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(text = region, style = KoFestTheme.type.sectionTitle, color = KoFestColors.Ink)
+        Text(
+            text = count.toString(),
+            style = KoFestTheme.type.regionCount,
+            color = KoFestColors.Jaju,
         )
     }
 }

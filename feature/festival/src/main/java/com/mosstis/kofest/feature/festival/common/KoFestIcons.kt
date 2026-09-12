@@ -19,6 +19,19 @@ object KoFestIcons {
 
     val List: ImageVector = stroked("M4 6.5h16M4 12h16M4 17.5h10")
 
+    /** 일정 — 핀이 꽂힌 길 */
+    val Plan: ImageVector = stroked(
+        "M7.5 3.5a3 3 0 0 1 3 3c0 2.2-3 5.5-3 5.5s-3-3.3-3-5.5a3 3 0 0 1 3-3z" +
+            "M7.5 6.2v.1M13 16.5a3 3 0 0 1 3 3c0 1.6-3 4-3 4s-3-2.4-3-4a3 3 0 0 1 3-3z" +
+            "M10 8.5h5.5a3 3 0 0 1 0 6H13",
+    )
+
+    /** 매거진 — 펼친 글 */
+    val Magazine: ImageVector = stroked(
+        "M4 5.5h6a2 2 0 0 1 2 2v11a2 2 0 0 0-2-2H4z" +
+            "M20 5.5h-6a2 2 0 0 0-2 2v11a2 2 0 0 1 2-2h6z",
+    )
+
     val Calendar: ImageVector = stroked(
         "M5.5 5.5h13a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1 -1.5 1.5h-13" +
             "a1.5 1.5 0 0 1 -1.5 -1.5v-12a1.5 1.5 0 0 1 1.5 -1.5z" +

@@ -1,4 +1,4 @@
-package com.mosstis.kofest.feature.festival.calendar
+package com.mosstis.kofest.feature.festival.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,9 +39,6 @@ import com.mosstis.kofest.domain.festival.model.FestivalState
 import com.mosstis.kofest.feature.festival.common.EmptyState
 import com.mosstis.kofest.feature.festival.common.FestivalFormat
 import com.mosstis.kofest.feature.festival.common.KoFestIcons
-import com.mosstis.kofest.feature.festival.home.HomeHeader
-import com.mosstis.kofest.feature.festival.list.FestivalRow
-import com.mosstis.kofest.feature.festival.list.FestivalRowSkeleton
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -51,126 +47,118 @@ import java.util.Locale
 import kotlin.math.abs
 
 /**
- * 달력 — "그날 뭐가 열리나".
+ * 달력 보기 — "그날 뭐가 열리나".
+ *
+ * 목록 화면 안의 다른 보기라 헤더·세그먼트·필터바는 [ListScreen] 이 그리고,
+ * 여기서는 그 아래 본문만 그린다. 필터는 목록과 공유한다 (기획서 05).
  *
  * 날짜를 눌러도 새 화면으로 넘어가지 않는다. 달력은 그대로 두고 아래 목록만 바뀐다.
  * 여행 계획은 여러 날짜를 오가며 세우기 때문이다.
  */
 @Composable
-fun CalendarScreen(
-    uiState: CalendarContract.State,
-    onAction: (CalendarContract.Action) -> Unit,
+fun CalendarView(
+    uiState: ListContract.State,
+    onAction: (ListContract.Action) -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
 ) {
     val s = strings()
-    val festivals = uiState.current
-    val byDay = remember(festivals, uiState.month) { festivals?.let { spreadByDay(it, uiState.month) } }
-    val selected = uiState.selected
+    val festivals = uiState.calendar.current
+    val byDay = remember(festivals, uiState.calendar.month) {
+        festivals?.let { spreadByDay(it, uiState.calendar.month) }
+    }
+    val selected = uiState.calendar.selected
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(KoFestColors.Paper),
-    ) {
-        HomeHeader(
-            language = uiState.language,
-            onSelectLanguage = { onAction(CalendarContract.Action.SelectLanguage(it)) },
-            onSearch = {},
-            showSearch = false,
-        )
+    LazyColumn(modifier = modifier) {
+        item(key = "top") {
+            MonthTop(
+                month = uiState.calendar.month,
+                count = festivals?.size,
+                onPrev = { onAction(ListContract.Action.PrevMonth) },
+                onNext = { onAction(ListContract.Action.NextMonth) },
+            )
+        }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item(key = "top") {
-                MonthTop(
-                    month = uiState.month,
-                    count = festivals?.size,
-                    onPrev = { onAction(CalendarContract.Action.PrevMonth) },
-                    onNext = { onAction(CalendarContract.Action.NextMonth) },
+        item(key = "grid") {
+            MonthGrid(
+                month = uiState.calendar.month,
+                today = today,
+                selected = selected,
+                byDay = byDay,
+                onSelect = { onAction(ListContract.Action.SelectDay(it)) },
+                onSwipe = { forward ->
+                    onAction(if (forward) ListContract.Action.NextMonth else ListContract.Action.PrevMonth)
+                },
+            )
+        }
+
+        when {
+            uiState.calendar.failedCurrent -> item(key = "error") {
+                EmptyState(
+                    title = s.error.loadFailed,
+                    body = s.error.loadFailedHint,
+                    actionLabel = s.action.retry,
+                    onAction = { onAction(ListContract.Action.RetryMonth) },
                 )
             }
 
-            item(key = "grid") {
-                MonthGrid(
-                    month = uiState.month,
-                    today = today,
-                    selected = selected,
-                    byDay = byDay,
-                    onSelect = { onAction(CalendarContract.Action.SelectDay(it)) },
-                    onSwipe = { forward ->
-                        onAction(if (forward) CalendarContract.Action.NextMonth else CalendarContract.Action.PrevMonth)
-                    },
-                )
+            festivals == null || byDay == null -> {
+                item(key = "loading-head") { Spacer(Modifier.height(22.dp)) }
+                items(count = 3, key = { "skeleton-$it" }) { FestivalRowSkeleton() }
             }
 
-            when {
-                uiState.failedCurrent -> item(key = "error") {
-                    EmptyState(
-                        title = s.error.loadFailed,
-                        body = s.error.loadFailedHint,
-                        actionLabel = s.action.retry,
-                        onAction = { onAction(CalendarContract.Action.Retry) },
+            selected != null -> {
+                val onDay = byDay[selected].orEmpty()
+                item(key = "sel-head") {
+                    SelectionHeader(
+                        title = selectedLabel(selected, uiState.language, s.calendar.selected),
+                        sub = s.calendar.dayCount.fill("count" to onDay.size),
                     )
                 }
-
-                festivals == null || byDay == null -> {
-                    item(key = "loading-head") { Spacer(Modifier.height(22.dp)) }
-                    items(count = 3, key = { "skeleton-$it" }) { FestivalRowSkeleton() }
-                }
-
-                selected != null -> {
-                    val onDay = byDay[selected].orEmpty()
-                    item(key = "sel-head") {
-                        SelectionHeader(
-                            title = selectedLabel(selected, uiState.language, s.calendar.selected),
-                            sub = s.calendar.dayCount.fill("count" to onDay.size),
+                if (onDay.isEmpty()) {
+                    item(key = "sel-empty") {
+                        EmptyDay(
+                            selected = selected,
+                            byDay = byDay,
+                            koCount = uiState.calendar.koMonths[uiState.calendar.month]
+                                ?.let { spreadByDay(it, uiState.calendar.month)[selected]?.size }
+                                ?: 0,
+                            language = uiState.language,
                         )
                     }
-                    if (onDay.isEmpty()) {
-                        item(key = "sel-empty") {
-                            EmptyDay(
-                                selected = selected,
-                                byDay = byDay,
-                                koCount = uiState.koMonths[uiState.month]
-                                    ?.let { spreadByDay(it, uiState.month)[selected]?.size }
-                                    ?: 0,
-                                language = uiState.language,
-                            )
-                        }
-                    } else {
-                        items(onDay, key = { it.contentId }) { festival ->
-                            FestivalRow(
-                                festival = festival,
-                                today = today,
-                                language = uiState.language,
-                                onClick = { onAction(CalendarContract.Action.OpenFestival(festival.contentId)) },
-                                whenText = dayRelation(festival, selected, uiState.language),
-                            )
-                        }
-                    }
-                }
-
-                else -> {
-                    val monthList = festivals.sortedWith(compareBy({ it.startDate }, { it.contentId }))
-                    item(key = "month-head") {
-                        SelectionHeader(
-                            title = monthLabel(uiState.month, uiState.language),
-                            sub = s.calendar.monthCount.fill("count" to monthList.size),
-                        )
-                    }
-                    items(monthList, key = { it.contentId }) { festival ->
+                } else {
+                    items(onDay, key = { it.contentId }) { festival ->
                         FestivalRow(
                             festival = festival,
                             today = today,
                             language = uiState.language,
-                            onClick = { onAction(CalendarContract.Action.OpenFestival(festival.contentId)) },
+                            onClick = { onAction(ListContract.Action.OpenFestival(festival.contentId)) },
+                            whenText = dayRelation(festival, selected, uiState.language),
                         )
                     }
                 }
             }
 
-            item(key = "bottom") { Spacer(Modifier.height(24.dp)) }
+            else -> {
+                val monthList = festivals.sortedWith(compareBy({ it.startDate }, { it.contentId }))
+                item(key = "month-head") {
+                    SelectionHeader(
+                        title = monthLabel(uiState.calendar.month, uiState.language),
+                        sub = s.calendar.monthCount.fill("count" to monthList.size),
+                    )
+                }
+                items(monthList, key = { it.contentId }) { festival ->
+                    FestivalRow(
+                        festival = festival,
+                        today = today,
+                        language = uiState.language,
+                        onClick = { onAction(ListContract.Action.OpenFestival(festival.contentId)) },
+                    )
+                }
+            }
         }
+
+        item(key = "bottom") { Spacer(Modifier.height(24.dp)) }
     }
 }
 

@@ -161,7 +161,15 @@ fun MyScreen(
                     value = uiState.cacheBytes?.let(::formatBytes),
                     onClick = { onAction(MyContract.Action.ClearCacheTap) },
                 )
-                SettingRow(label = s.my.version, value = versionName, chevron = false, divider = false)
+                SettingRow(
+                    label = s.my.version,
+                    // 홈을 아직 못 불렀으면 서버 설정이 없어 '최신'으로 보인다.
+                    // 모르는 상태에서 "업데이트 있음"을 띄우는 것보다 낫다.
+                    value = "$versionName · " +
+                        if (uiState.updateAvailable) s.my.versionUpdate else s.my.versionLatest,
+                    chevron = false,
+                    divider = false,
+                )
                 Spacer(Modifier.height(22.dp))
                 Text(
                     text = s.my.localOnly,

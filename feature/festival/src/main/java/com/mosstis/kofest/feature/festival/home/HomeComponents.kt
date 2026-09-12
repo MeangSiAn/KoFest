@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mosstis.kofest.core.common.AppLanguage
 import com.mosstis.kofest.core.designsystem.component.NowMark
+import com.mosstis.kofest.core.designsystem.component.PillSegment
 import com.mosstis.kofest.core.designsystem.theme.KoFestColors
 import com.mosstis.kofest.core.designsystem.theme.KoFestDimens
 import com.mosstis.kofest.core.designsystem.theme.KoFestTheme
@@ -40,6 +41,8 @@ import com.mosstis.kofest.domain.festival.model.Banner
 import com.mosstis.kofest.domain.festival.model.Festival
 import com.mosstis.kofest.domain.festival.model.LanguageCounts
 import com.mosstis.kofest.domain.festival.model.RegionBucket
+import com.mosstis.kofest.domain.festival.model.RegionGroup
+import com.mosstis.kofest.domain.festival.model.RegionGroupBucket
 import com.mosstis.kofest.feature.festival.common.FestivalFormat
 import com.mosstis.kofest.feature.festival.common.FestivalImage
 import com.mosstis.kofest.feature.festival.common.KoFestIcons
@@ -102,30 +105,11 @@ fun LanguageSegment(
     onSelect: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, KoFestColors.Jaju, RoundedCornerShape(20.dp)),
-    ) {
-        SegmentButton("한국어", language == AppLanguage.KO) { onSelect(AppLanguage.KO) }
-        SegmentButton("EN", language == AppLanguage.EN) { onSelect(AppLanguage.EN) }
-    }
-}
-
-@Composable
-private fun SegmentButton(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        text = label,
-        style = KoFestTheme.type.chip.copy(
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.4.sp,
-        ),
-        color = if (selected) KoFestColors.OnJaju else KoFestColors.Jaju,
-        modifier = Modifier
-            .background(if (selected) KoFestColors.Jaju else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 5.dp),
+    PillSegment(
+        labels = listOf("한국어", "EN"),
+        selectedIndex = if (language == AppLanguage.KO) 0 else 1,
+        onSelect = { index -> onSelect(if (index == 0) AppLanguage.KO else AppLanguage.EN) },
+        modifier = modifier,
     )
 }
 
@@ -325,22 +309,28 @@ fun FestivalCard(
  */
 @Composable
 fun RegionGrid(
-    regions: List<RegionBucket>,
+    groups: List<RegionGroupBucket>,
+    ungrouped: List<RegionBucket>,
     totalCount: Int,
-    onRegion: (String) -> Unit,
+    onRegion: (List<String>) -> Unit,
     onAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val regionNames = strings().region
+    // 광역권 8개 뒤에, 어느 권역에도 못 넣은 시도가 있으면 그대로 붙인다.
+    // 조용히 버리면 건수 합이 안 맞는 이유를 찾기 어렵다.
+    val cells = groups.map { it.groupName() to (it.codes to it.count) } +
+        ungrouped.map { (regionNames[it.code] ?: it.name) to (listOf(it.code) to it.count) }
 
     Column(modifier = modifier.padding(horizontal = KoFestDimens.ScreenMargin)) {
-        regions.chunked(2).forEach { pair ->
+        cells.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                pair.forEach { bucket ->
+                pair.forEach { (name, value) ->
+                    val (codes, count) = value
                     RegionRow(
-                        name = regionNames[bucket.code] ?: bucket.name,
-                        count = bucket.count,
-                        onClick = { onRegion(bucket.code) },
+                        name = name,
+                        count = count,
+                        onClick = { onRegion(codes) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -428,7 +418,7 @@ fun LanguageNotice(
         Text(text = s.language.noticeTitle, style = KoFestTheme.type.bodyStrong, color = KoFestColors.Ink)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = s.language.notice.fill("ko" to counts.ko, "en" to counts.en),
+            text = s.language.notice.fill("ko" to counts.ko.festival, "en" to counts.en.festival),
             style = KoFestTheme.type.notice,
             color = KoFestColors.NoticeInk,
         )
@@ -449,5 +439,20 @@ fun LanguageNotice(
                 .padding(vertical = 11.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+    }
+}
+
+/** 광역권 이름. 시도 이름이 아니라 기획서 02 의 묶음 이름이다 */
+@Composable
+private fun RegionGroupBucket.groupName(): String = with(strings().area) {
+    when (group) {
+        RegionGroup.SEOUL -> seoul
+        RegionGroup.GYEONGGI_INCHEON -> gyeonggi
+        RegionGroup.GANGWON -> gangwon
+        RegionGroup.CHUNGCHEONG -> chungcheong
+        RegionGroup.JEOLLA -> jeolla
+        RegionGroup.GYEONGSANG -> gyeongsang
+        RegionGroup.JEJU -> jeju
+        RegionGroup.BUSAN_ULSAN -> busan
     }
 }

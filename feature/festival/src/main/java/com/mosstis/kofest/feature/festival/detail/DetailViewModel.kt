@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.mosstis.kofest.core.common.AppLanguage
 import com.mosstis.kofest.core.presentation.base.BaseViewModel
+import com.mosstis.kofest.domain.festival.analytics.AppEvent
+import com.mosstis.kofest.domain.festival.analytics.EventTracker
 import com.mosstis.kofest.domain.festival.usecase.GetFestivalDetailUseCase
 import com.mosstis.kofest.domain.festival.usecase.IsFestivalSavedUseCase
 import com.mosstis.kofest.domain.festival.usecase.ToggleSavedFestivalUseCase
@@ -17,6 +19,7 @@ import javax.inject.Inject
 class DetailViewModel @Inject constructor(
     private val getFestivalDetail: GetFestivalDetailUseCase,
     private val toggleSaved: ToggleSavedFestivalUseCase,
+    private val tracker: EventTracker,
     isFestivalSaved: IsFestivalSavedUseCase,
     savedStateHandle: SavedStateHandle,
 ) : BaseViewModel<DetailContract.State, DetailContract.Action, DetailContract.Effect>(
@@ -32,6 +35,8 @@ class DetailViewModel @Inject constructor(
     private val contentId: Long = savedStateHandle.get<String>(ARG_CONTENT_ID)?.toLongOrNull() ?: 0L
 
     init {
+        tracker.track(AppEvent.VIEW_DETAIL, contentId = contentId)
+
         load()
 
         isFestivalSaved(currentState.language, contentId)
@@ -82,6 +87,8 @@ class DetailViewModel @Inject constructor(
 
             DetailContract.Action.OpenHomepage -> {
                 val url = currentState.detail?.homepageUrl ?: return
+                // 앱 밖으로 나가는 것은 따로 센다. 어느 축제에서 나갔는지가 중요하다.
+                tracker.track(AppEvent.OUTLINK, contentId = contentId)
                 sendEffect(DetailContract.Effect.OpenUrl(url))
             }
 

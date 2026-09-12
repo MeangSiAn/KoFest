@@ -15,12 +15,14 @@ import androidx.lifecycle.repeatOnLifecycle
 @Composable
 fun ListRoute(
     onNavigateToDetail: (AppLanguage, Long) -> Unit,
+    onNavigateToPlace: (AppLanguage, Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnNavigateToDetail by rememberUpdatedState(onNavigateToDetail)
+    val currentOnNavigateToPlace by rememberUpdatedState(onNavigateToPlace)
 
     LaunchedEffect(viewModel, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -28,6 +30,9 @@ fun ListRoute(
                 when (effect) {
                     is ListContract.Effect.NavigateToDetail ->
                         currentOnNavigateToDetail(effect.language, effect.contentId)
+
+                    is ListContract.Effect.NavigateToPlace ->
+                        currentOnNavigateToPlace(effect.language, effect.contentId)
                 }
             }
         }

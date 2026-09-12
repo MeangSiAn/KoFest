@@ -25,13 +25,129 @@ data class KoFestStrings(
     val empty: Empty,
     val error: ErrorStrings,
     val loading: Loading,
+    val place: PlaceStrings,
+    val theme: ThemeStrings,
+    val story: StoryStrings,
+    val plan: PlanStrings,
+    val area: AreaStrings,
     val region: Map<String, String>,
 ) {
     data class Meta(val name: String, val dateFormat: String)
 
     data class App(val name: String, val tagline: String)
 
-    data class Nav(val home: String, val list: String, val calendar: String, val saved: String)
+    data class Nav(
+        val home: String,
+        val list: String,
+        val calendar: String,
+        val plan: String,
+        val story: String,
+        val saved: String,
+    )
+
+    /** 관광지. i18n 원본에 이미 있던 값 그대로다 */
+    data class PlaceStrings(
+        val title: String,
+        val sub: String,
+        val seeAll: String,
+        val count: String,
+        val filterType: String,
+        val type12: String,
+        val type14: String,
+        val type28: String,
+        val type38: String,
+        val type39: String,
+        val nearby: String,
+        val noResult: String,
+        val noOverview: String,
+        val comingSoonRegion: String,
+    ) {
+        /** 유형 번호는 **언제나 한국어 번호**다 (영문 76 을 쓰지 않는다) */
+        fun typeName(type: Int): String? = when (type) {
+            12 -> type12
+            14 -> type14
+            28 -> type28
+            38 -> type38
+            39 -> type39
+            else -> null
+        }
+    }
+
+    /** i18n `theme.*`. 이름을 원본 키와 맞춘다 — 값을 옮길 때 대조가 쉽다 */
+    data class ThemeStrings(
+        val title: String,
+        val sub: String,
+        val count: String,
+        val open: String,
+        val close: String,
+        val kindFestival: String,
+        val kindPlace: String,
+    )
+
+    /** i18n `story.*` */
+    data class StoryStrings(
+        val title: String,
+        val sub: String,
+        val pinned: String,
+        val empty: String,
+        val more: String,
+        val published: String,
+        val updated: String,
+    )
+
+    /** i18n `plan.*`. `when` 은 Kotlin 예약어라 [whenLabel] */
+    data class PlanStrings(
+        val title: String,
+        val lead: String,
+        val where: String,
+        val whenLabel: String,
+        val howLong: String,
+        val how: String,
+        val build: String,
+        val rebuild: String,
+        val pickAreaFirst: String,
+        val nights0: String,
+        val nights: String,
+        val moodFestival: String,
+        val moodFestivalDesc: String,
+        val moodEasy: String,
+        val moodEasyDesc: String,
+        val moodMany: String,
+        val moodManyDesc: String,
+        val resultTitle: String,
+        val summary: String,
+        val withFestivals: String,
+        val day: String,
+        val stay: String,
+        val walk: String,
+        val transit: String,
+        val lunch: String,
+        val dinner: String,
+        val festivalTag: String,
+        val noStops: String,
+        val thin: String,
+        val distanceNote: String,
+        val save: String,
+        val saved: String,
+        /** 만드는 동안 돌아가며 보여주는 문구 6개. i18n `plan.loading1~6` */
+        val loading: List<String>,
+        val loadingDone: String,
+    )
+
+    /**
+     * 광역권 8개 이름. i18n `area.*`. 홈의 지역 묶음과 자동 일정의 권역이 같이 쓴다.
+     * (일정 서버는 아직 7개라 `busan` 을 보내면 400 — 적용방법.md)
+     */
+    data class AreaStrings(
+        val seoul: String,
+        val gyeonggi: String,
+        val gangwon: String,
+        val chungcheong: String,
+        val jeolla: String,
+        val gyeongsang: String,
+        val busan: String,
+        val jeju: String,
+    )
 
     data class Action(
         val search: String,
@@ -48,9 +164,10 @@ data class KoFestStrings(
     data class Home(
         val ongoingTitle: String,
         val ongoingSub: String,
-        val weekendTitleThis: String,
-        val weekendTitleNext: String,
-        val weekendSub: String,
+        /** "가볼 만한 여행지" — 관광지 8건. i18n `home.picks.*` */
+        val picksTitle: String,
+        val picksSub: String,
+        val picksAll: String,
         val regionTitle: String,
         val regionSub: String,
         val regionAll: String,
@@ -64,6 +181,8 @@ data class KoFestStrings(
         val titleRegion: String,
         val count: String,
         val monthCount: String,
+        val tabFestival: String,
+        val tabPlace: String,
     )
 
     data class Filter(
@@ -120,6 +239,9 @@ data class KoFestStrings(
 
     data class My(
         val title: String,
+        /** i18n `my.trips` / `my.tripsEmpty` — 자동 일정 조건을 담아두는 곳 */
+        val trips: String,
+        val tripsEmpty: String,
         val savedCount: String,
         val upcomingCount: String,
         val savedList: String,

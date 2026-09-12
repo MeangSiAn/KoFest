@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * 확인된 사항
  *   GET /festivals   → { items[], counts{ko,en}, nextCursor }
- *   GET /home        → { ongoing[], weekend{from,to,items[]}, regions[], counts }
+ *   GET /home        → { ads, notice, minAppVersion, banners[], ongoing[], themes[], picks[], storyCount, themeCount, regions[], counts }
  *   인증             → `X-API-Key` 헤더. 실패 시 401 + { error, message, hint }
  *   목록 정렬        → start_date, content_id 오름차순
  *   기본 필터        → 종료된 축제는 오지 않는다 (서버가 오늘 기준으로 거른다)
@@ -29,8 +29,19 @@ data class FestivalDto(
 
 @Serializable
 data class CountsDto(
-    val ko: Int = 0,
-    val en: Int = 0,
+    val ko: CountDto = CountDto(),
+    val en: CountDto = CountDto(),
+)
+
+/**
+ * 언어 하나의 건수. 서버가 축제·관광지를 나눠서 준다.
+ * 예전 평면 구조(`"ko": 903`)에서 바뀌었다 — 평면으로 두면 파싱이 통째로 실패한다.
+ */
+@Serializable
+data class CountDto(
+    val festival: Int = 0,
+    val place: Int = 0,
+    val total: Int = 0,
 )
 
 @Serializable
@@ -40,12 +51,6 @@ data class FestivalListResponse(
     val nextCursor: String? = null,
 )
 
-@Serializable
-data class WeekendDto(
-    val from: String,
-    val to: String,
-    val items: List<FestivalDto> = emptyList(),
-)
 
 @Serializable
 data class RegionDto(
@@ -75,11 +80,33 @@ data class BannerDto(
 
 @Serializable
 data class HomeResponse(
+    /** 이 버전 미만이면 업데이트를 알린다. 실제 응답은 아직 null */
+    val minAppVersion: String? = null,
+    val ads: AdsDto? = null,
     val banners: List<BannerDto> = emptyList(),
     val ongoing: List<FestivalDto> = emptyList(),
-    val weekend: WeekendDto,
+    /** 테마 캐러셀. `/themes` 를 따로 안 불러도 된다 */
+    val themes: List<ThemeDto> = emptyList(),
+    /** 관광지 8건. 무작위이되 하루 동안 같다 */
+    val picks: List<PlaceDto> = emptyList(),
+    /** 0 이면 그 섹션·탭을 그리지 않는다 */
+    val storyCount: Int = 0,
+    val themeCount: Int = 0,
     val regions: List<RegionDto> = emptyList(),
     val counts: CountsDto = CountsDto(),
+)
+
+/**
+ * 광고 설정. **개발문서 3장과 필드 이름이 다르다** — 문서는 `listFirst`/`unitList`/`unitDetail`,
+ * 실제 응답(2026-09-10)은 `{enabled, listFirstIndex, listInterval, onDetail}` 이고 광고 단위 ID 는 없다.
+ * 응답을 기준으로 맞춘다.
+ */
+@Serializable
+data class AdsDto(
+    val enabled: Boolean = false,
+    val listFirstIndex: Int = 0,
+    val listInterval: Int = 0,
+    val onDetail: Boolean = false,
 )
 
 /**

@@ -14,7 +14,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.mosstis.kofest.feature.festival.common.dial
 import com.mosstis.kofest.feature.festival.common.launchOrIgnore
+import com.mosstis.kofest.feature.festival.common.openMap
 
 /**
  * 외부 앱 실행(지도·전화·브라우저·공유)은 여기서만 한다.
@@ -42,20 +44,10 @@ fun DetailRoute(
                     is DetailContract.Effect.NavigateToDetail ->
                         currentOnNavigateToDetail(effect.language, effect.contentId)
 
-                    is DetailContract.Effect.OpenMap -> context.launchOrIgnore(
-                        // geo: 스킴은 설치된 지도앱이 받는다. 앱 안에 지도를 넣지 않는다.
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse(
-                                "geo:${effect.latitude},${effect.longitude}" +
-                                    "?q=${effect.latitude},${effect.longitude}(${Uri.encode(effect.label)})",
-                            ),
-                        ),
-                    )
+                    is DetailContract.Effect.OpenMap ->
+                        context.openMap(effect.latitude, effect.longitude, effect.label)
 
-                    is DetailContract.Effect.Dial -> context.launchOrIgnore(
-                        Intent(Intent.ACTION_DIAL, Uri.parse("tel:${effect.tel}")),
-                    )
+                    is DetailContract.Effect.Dial -> context.dial(effect.tel)
 
                     is DetailContract.Effect.OpenUrl -> context.launchOrIgnore(
                         Intent(Intent.ACTION_VIEW, Uri.parse(effect.url)),
