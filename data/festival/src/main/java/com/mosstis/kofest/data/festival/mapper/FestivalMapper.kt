@@ -35,6 +35,7 @@ internal fun RegionDto.toDomain(): RegionBucket = RegionBucket(
     code = code,
     name = name,
     count = count,
+    places = places,
 )
 
 internal fun String.toLocalDateOrNull(): LocalDate? =

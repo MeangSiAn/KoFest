@@ -7,7 +7,6 @@ import com.mosstis.kofest.domain.festival.analytics.AppEvent
 import com.mosstis.kofest.domain.festival.analytics.EventTracker
 import com.mosstis.kofest.domain.festival.model.Banner
 import com.mosstis.kofest.domain.festival.model.Theme
-import com.mosstis.kofest.domain.festival.model.groupByRegion
 import com.mosstis.kofest.domain.festival.repository.FestivalRepository
 import com.mosstis.kofest.domain.festival.usecase.GetHomeFeedUseCase
 import com.mosstis.kofest.domain.festival.usecase.GetStoriesUseCase
@@ -77,7 +76,7 @@ class HomeViewModel @Inject constructor(
             }
 
             is HomeContract.Action.OpenRegion ->
-                sendEffect(HomeContract.Effect.NavigateToList(regionCodes = action.regionCodes))
+                sendEffect(HomeContract.Effect.NavigateToList(regionCodes = listOf(action.regionCode)))
 
             // 별도 화면을 만들지 않는다. 카드를 누르면 그 자리에서 펼쳐진다 (기획서 08).
             is HomeContract.Action.ToggleTheme -> updateState {
@@ -130,13 +129,10 @@ class HomeViewModel @Inject constructor(
         ) {
             val language = currentState.language
             val feed = getHomeFeed(language)
-            val (groups, ungrouped) = feed.regions.groupByRegion()
             updateState {
                 copy(
                     feed = feed,
                     feedLanguage = language,
-                    regionGroups = groups,
-                    ungroupedRegions = ungrouped,
                     isLoading = false,
                     isStale = false,
                     hasFatalError = false,

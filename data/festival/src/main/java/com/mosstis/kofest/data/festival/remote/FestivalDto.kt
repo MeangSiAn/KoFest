@@ -56,7 +56,10 @@ data class FestivalListResponse(
 data class RegionDto(
     val code: String,
     val name: String,
+    /** 앞으로 열릴 축제 수 */
     val count: Int = 0,
+    /** 관광지 수 */
+    val places: Int = 0,
 )
 
 /**

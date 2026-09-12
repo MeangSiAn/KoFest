@@ -48,6 +48,8 @@ import java.time.format.DateTimeFormatter
 fun MagazineScreen(
     uiState: MagazineContract.State,
     onAction: (MagazineContract.Action) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val s = strings()
@@ -71,7 +73,7 @@ fun MagazineScreen(
         HomeHeader(
             language = uiState.language,
             onSelectLanguage = { onAction(MagazineContract.Action.SelectLanguage(it)) },
-            onSearch = {},
+            onSearch = onSearch,
             showSearch = false,
         )
 

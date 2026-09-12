@@ -56,6 +56,8 @@ fun MyScreen(
     uiState: MyContract.State,
     versionName: String,
     onAction: (MyContract.Action) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
 ) {
@@ -69,7 +71,7 @@ fun MyScreen(
         HomeHeader(
             language = uiState.language,
             onSelectLanguage = { onAction(MyContract.Action.SelectLanguage(it)) },
-            onSearch = {},
+            onSearch = onSearch,
             showSearch = false,
         )
 

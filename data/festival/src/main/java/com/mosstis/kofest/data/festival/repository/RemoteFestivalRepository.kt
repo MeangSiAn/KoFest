@@ -145,6 +145,7 @@ class RemoteFestivalRepository @Inject constructor(
             // 서버는 기본으로 종료된 축제를 빼 준다. ongoing 만 볼 때만 state 를 보낸다.
             state = if (filter.ongoingOnly) STATE_ONGOING else null,
             hasImage = if (filter.hasImageOnly) true else null,
+            query = filter.query?.takeIf { it.isNotBlank() },
             cursor = cursor,
             limit = limit,
         )

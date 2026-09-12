@@ -14,6 +14,7 @@ internal val EnStrings = KoFestStrings(
     action = KoFestStrings.Action(
         search = "Search",
         back = "Back",
+        close = "Close",
         retry = "Try again",
         seeAll = "All {count}",
         share = "Share",
@@ -172,6 +173,7 @@ internal val EnStrings = KoFestStrings(
         noSaved = "Nothing saved yet",
         noSavedHint = "Save a festival and it'll show up here.",
         noPhotos = "No photos available",
+        searchNoResult = "Nothing found for '{query}'",
     ),
     error = KoFestStrings.ErrorStrings(
         offline = "Showing saved listings. Last updated {time}.",

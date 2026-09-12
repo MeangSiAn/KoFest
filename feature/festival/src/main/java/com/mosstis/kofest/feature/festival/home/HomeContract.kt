@@ -7,7 +7,6 @@ import com.mosstis.kofest.core.presentation.contract.UiState
 import com.mosstis.kofest.domain.festival.model.Banner
 import com.mosstis.kofest.domain.festival.model.HomeFeed
 import com.mosstis.kofest.domain.festival.model.RegionBucket
-import com.mosstis.kofest.domain.festival.model.RegionGroupBucket
 import com.mosstis.kofest.domain.festival.model.Story
 import com.mosstis.kofest.domain.festival.model.Theme
 import java.time.Instant
@@ -32,9 +31,6 @@ object HomeContract {
         /** 보여줄 데이터가 하나도 없는 실패 */
         val hasFatalError: Boolean = false,
         /** 시도 16개를 광역권 8개로 묶은 것 (기획서 02) */
-        val regionGroups: List<RegionGroupBucket> = emptyList(),
-        /** 어느 광역권에도 못 넣은 시도. 조용히 버리면 건수가 안 맞는 이유를 못 찾는다 */
-        val ungroupedRegions: List<RegionBucket> = emptyList(),
         /** 홈 아래 매거진 최신 3건. `storyCount` 가 0 이면 부르지 않는다 */
         val latestStories: List<Story> = emptyList(),
         /** 펼쳐 놓은 테마 카드. 홈을 떠났다 오면 접힌다 */
@@ -56,7 +52,7 @@ object HomeContract {
         /** 배너가 화면에 멈춰 섰다. 스쳐 지나간 장은 세지 않는다 */
         data object BannerShown : Action
         /** 광역권 하나. 안에 시도코드가 여럿이다 */
-        data class OpenRegion(val regionCodes: List<String>) : Action
+        data class OpenRegion(val regionCode: String) : Action
 
         /** 테마 카드를 눌렀다. 별도 화면 없이 **그 자리에서** 펼친다 (기획서 08) */
         data class ToggleTheme(val themeId: Long) : Action

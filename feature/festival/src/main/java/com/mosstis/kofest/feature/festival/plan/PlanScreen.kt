@@ -68,6 +68,8 @@ import java.util.Locale
 fun PlanScreen(
     uiState: PlanContract.State,
     onAction: (PlanContract.Action) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -78,7 +80,7 @@ fun PlanScreen(
         HomeHeader(
             language = uiState.language,
             onSelectLanguage = { onAction(PlanContract.Action.SelectLanguage(it)) },
-            onSearch = {},
+            onSearch = onSearch,
             showSearch = false,
         )
 

@@ -14,6 +14,7 @@ internal val KoStrings = KoFestStrings(
     action = KoFestStrings.Action(
         search = "검색",
         back = "뒤로",
+        close = "닫기",
         retry = "다시 시도",
         seeAll = "전체 {count}",
         share = "공유",
@@ -172,6 +173,7 @@ internal val KoStrings = KoFestStrings(
         noSaved = "저장한 축제가 없습니다",
         noSavedHint = "마음에 드는 축제를 저장해두면 여기서 볼 수 있어요.",
         noPhotos = "등록된 사진이 없습니다",
+        searchNoResult = "'{query}' 검색 결과가 없습니다",
     ),
     error = KoFestStrings.ErrorStrings(
         offline = "저장된 정보를 보고 있어요. 마지막 갱신 {time}",

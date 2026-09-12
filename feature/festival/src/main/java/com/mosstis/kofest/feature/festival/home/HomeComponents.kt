@@ -41,8 +41,6 @@ import com.mosstis.kofest.domain.festival.model.Banner
 import com.mosstis.kofest.domain.festival.model.Festival
 import com.mosstis.kofest.domain.festival.model.LanguageCounts
 import com.mosstis.kofest.domain.festival.model.RegionBucket
-import com.mosstis.kofest.domain.festival.model.RegionGroup
-import com.mosstis.kofest.domain.festival.model.RegionGroupBucket
 import com.mosstis.kofest.feature.festival.common.FestivalFormat
 import com.mosstis.kofest.feature.festival.common.FestivalImage
 import com.mosstis.kofest.feature.festival.common.KoFestIcons
@@ -304,33 +302,27 @@ fun FestivalCard(
 }
 
 /**
- * 지역으로 찾기 — 2열 목록.
+ * 지역으로 찾기 — `/home` 의 `regions` 를 **오는 대로 전부** 그린다.
+ *
+ * 시도 단위다. 일정 짜기의 광역권 9개로 묶지 않는다 —
+ * 목록 필터가 시도 단위라 묶으면 필터와 안 맞는다.
  * 정사각 타일 격자를 쓰지 않는다. 어디서나 보는 형태이고 화면의 1/3 을 먹는다.
  */
 @Composable
 fun RegionGrid(
-    groups: List<RegionGroupBucket>,
-    ungrouped: List<RegionBucket>,
+    regions: List<RegionBucket>,
     totalCount: Int,
-    onRegion: (List<String>) -> Unit,
+    onRegion: (String) -> Unit,
     onAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val regionNames = strings().region
-    // 광역권 8개 뒤에, 어느 권역에도 못 넣은 시도가 있으면 그대로 붙인다.
-    // 조용히 버리면 건수 합이 안 맞는 이유를 찾기 어렵다.
-    val cells = groups.map { it.groupName() to (it.codes to it.count) } +
-        ungrouped.map { (regionNames[it.code] ?: it.name) to (listOf(it.code) to it.count) }
-
     Column(modifier = modifier.padding(horizontal = KoFestDimens.ScreenMargin)) {
-        cells.chunked(2).forEach { pair ->
+        regions.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                pair.forEach { (name, value) ->
-                    val (codes, count) = value
+                pair.forEach { bucket ->
                     RegionRow(
-                        name = name,
-                        count = count,
-                        onClick = { onRegion(codes) },
+                        bucket = bucket,
+                        onClick = { onRegion(bucket.code) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -363,10 +355,10 @@ fun RegionGrid(
     }
 }
 
+/** 축제 건수를 크게 두고 관광지는 아래에 작게 적는다. */
 @Composable
 private fun RegionRow(
-    name: String,
-    count: Int,
+    bucket: RegionBucket,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -374,16 +366,33 @@ private fun RegionRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.Top,
         ) {
-            Text(text = name, style = KoFestTheme.type.regionName, color = KoFestColors.Ink)
             Text(
-                text = count.toString(),
-                style = KoFestTheme.type.regionCount,
-                color = KoFestColors.Jaju,
+                text = bucket.name,
+                style = KoFestTheme.type.regionName,
+                color = KoFestColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
+            Spacer(Modifier.width(8.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = bucket.count.toString(),
+                    style = KoFestTheme.type.regionCount,
+                    color = KoFestColors.Jaju,
+                )
+                if (bucket.places > 0) {
+                    Text(
+                        text = strings().place.count.fill("count" to bucket.places),
+                        style = KoFestTheme.type.cardMeta,
+                        color = KoFestColors.Muted,
+                    )
+                }
+            }
         }
         Box(
             Modifier
@@ -442,17 +451,3 @@ fun LanguageNotice(
     }
 }
 
-/** 광역권 이름. 시도 이름이 아니라 기획서 02 의 묶음 이름이다 */
-@Composable
-private fun RegionGroupBucket.groupName(): String = with(strings().area) {
-    when (group) {
-        RegionGroup.SEOUL -> seoul
-        RegionGroup.GYEONGGI_INCHEON -> gyeonggi
-        RegionGroup.GANGWON -> gangwon
-        RegionGroup.CHUNGCHEONG -> chungcheong
-        RegionGroup.JEOLLA -> jeolla
-        RegionGroup.GYEONGSANG -> gyeongsang
-        RegionGroup.JEJU -> jeju
-        RegionGroup.BUSAN_ULSAN -> busan
-    }
-}

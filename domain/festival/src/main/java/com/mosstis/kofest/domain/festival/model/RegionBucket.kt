@@ -1,16 +1,20 @@
 package com.mosstis.kofest.domain.festival.model
 
 /**
- * 홈의 '지역으로 찾기' 한 칸.
+ * 홈 '지역으로 찾기' 한 칸. `/home` 의 `regions` 한 건이다.
  *
- * [code] 는 시도코드 2자리, [name] 은 **서버가 완성해서 준 이름**이다
- * (`lang=en` 이면 "Seoul"). 앱이 코드를 이름으로 바꾸지 않는다.
+ * **시도 단위다.** 자동 일정 짜기의 광역권 9개(`seoul` `chungcheong` …)와는 다른 목록이고
+ * 섞으면 안 된다 — 목록 필터가 시도 단위라 묶으면 필터와 안 맞는다.
+ * 서버가 주는 대로 **전부** 그린다. 자르지 않는다.
  *
- * 기획서의 8개 광역권(경기·인천, 부산·울산 …)은 어디에도 정의가 없는 임의 묶음이라
- * 서버가 묶어 주기 전까지는 시도 단위를 그대로 보여준다.
+ * [name] 은 서버가 완성해서 준 이름이다 (`lang=en` 이면 "Seoul").
+ * "서울특별시"를 "서울"로 줄이지 않는다.
  */
 data class RegionBucket(
     val code: String,
     val name: String,
+    /** 앞으로 열릴 축제 수 */
     val count: Int,
+    /** 관광지 수. 축제만 세면 관광지 1만 건이 없는 것처럼 보인다 */
+    val places: Int,
 )

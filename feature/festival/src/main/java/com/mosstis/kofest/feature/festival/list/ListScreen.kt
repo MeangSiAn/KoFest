@@ -29,6 +29,8 @@ import java.time.LocalDate
 fun ListScreen(
     uiState: ListContract.State,
     onAction: (ListContract.Action) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
 ) {
@@ -62,10 +64,12 @@ fun ListScreen(
     }
 
     val regionLabel = regionLabelOf(uiState.filter.regionCodes)
-    val title = if (regionLabel == null) {
-        s.list.title
-    } else {
-        s.list.titleRegion.fill("region" to regionLabel)
+    // 검색에서 '전체 보기' 로 넘어왔으면 검색어가 제목이다.
+    val query = uiState.filter.query
+    val title = when {
+        !query.isNullOrBlank() -> query
+        regionLabel != null -> s.list.titleRegion.fill("region" to regionLabel)
+        else -> s.list.title
     }
 
     Column(
@@ -77,7 +81,7 @@ fun ListScreen(
             title = title,
             mode = uiState.mode,
             onSelectMode = { onAction(ListContract.Action.SelectMode(it)) },
-            onSearch = { /* TODO(search): 검색 화면은 아직 기획서에 정의가 없다 */ },
+            onSearch = onSearch,
             showModeSegment = uiState.tab == ListContract.Tab.FESTIVAL,
         )
 

@@ -28,6 +28,8 @@ import kotlinx.coroutines.withContext
 fun MyRoute(
     onNavigateToDetail: (AppLanguage, Long) -> Unit,
     onNavigateToList: () -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MyViewModel = hiltViewModel(),
 ) {
@@ -76,6 +78,7 @@ fun MyRoute(
     }
 
     MyScreen(
+        onSearch = onSearch,
         uiState = uiState,
         versionName = versionName,
         onAction = viewModel::onAction,

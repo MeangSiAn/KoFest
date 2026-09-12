@@ -39,6 +39,8 @@ import java.time.LocalDate
 fun HomeScreen(
     uiState: HomeContract.State,
     onAction: (HomeContract.Action) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     today: LocalDate = LocalDate.now(),
 ) {
@@ -52,7 +54,7 @@ fun HomeScreen(
         HomeHeader(
             language = uiState.language,
             onSelectLanguage = { onAction(HomeContract.Action.SelectLanguage(it)) },
-            onSearch = { /* TODO(search): 검색 화면은 아직 기획서에 정의가 없다 */ },
+            onSearch = onSearch,
         )
 
         if (uiState.isStale) {
@@ -203,8 +205,7 @@ private fun HomeContent(
                 onSeeAll = {},
             )
             RegionGrid(
-                groups = uiState.regionGroups,
-                ungrouped = uiState.ungroupedRegions,
+                regions = feed.regions,
                 totalCount = feed.totalCount,
                 onRegion = { onAction(HomeContract.Action.OpenRegion(it)) },
                 onAll = { onAction(HomeContract.Action.OpenAllFestivals) },

@@ -15,6 +15,8 @@ import com.mosstis.kofest.core.common.AppLanguage
 @Composable
 fun MagazineRoute(
     onNavigateToStory: (AppLanguage, String) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MagazineViewModel = hiltViewModel(),
 ) {
@@ -33,5 +35,6 @@ fun MagazineRoute(
         }
     }
 
-    MagazineScreen(uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
+    MagazineScreen(
+        onSearch = onSearch,uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
 }

@@ -51,6 +51,7 @@ class ListViewModel @Inject constructor(
                 ?.filter { it.isNotBlank() }
                 .orEmpty(),
             ongoingOnly = savedStateHandle.get<String>(ARG_ONGOING)?.toBooleanStrictOrNull() ?: false,
+            query = savedStateHandle.get<String>(ARG_QUERY)?.takeIf { it.isNotBlank() },
         ),
     ),
 ) {
@@ -372,6 +373,9 @@ class ListViewModel @Inject constructor(
     companion object {
         const val ARG_REGION = "region"
         const val ARG_ONGOING = "ongoing"
+
+        /** 검색에서 "전체 보기" 로 넘어올 때 검색어를 들고 온다 */
+        const val ARG_QUERY = "q"
 
         /** 무한정 받지 않는다. 20개씩 5페이지면 100건 */
         private const val MAX_PAGES_TO_REACH_MONTH = 5

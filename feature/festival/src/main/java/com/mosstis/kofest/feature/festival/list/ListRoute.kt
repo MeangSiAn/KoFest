@@ -16,6 +16,8 @@ import androidx.lifecycle.repeatOnLifecycle
 fun ListRoute(
     onNavigateToDetail: (AppLanguage, Long) -> Unit,
     onNavigateToPlace: (AppLanguage, Long) -> Unit,
+    /** 상단 검색 아이콘. 검색은 탭이 아니라 검색창에서 들어간다 */
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ListViewModel = hiltViewModel(),
 ) {
@@ -39,6 +41,7 @@ fun ListRoute(
     }
 
     ListScreen(
+        onSearch = onSearch,
         uiState = uiState,
         onAction = viewModel::onAction,
         modifier = modifier,

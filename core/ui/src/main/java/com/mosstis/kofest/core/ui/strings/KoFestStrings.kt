@@ -152,6 +152,7 @@ data class KoFestStrings(
     data class Action(
         val search: String,
         val back: String,
+        val close: String,
         val retry: String,
         val seeAll: String,
         val share: String,
@@ -325,6 +326,7 @@ data class KoFestStrings(
         val noSaved: String,
         val noSavedHint: String,
         val noPhotos: String,
+        val searchNoResult: String,
     )
 
     data class ErrorStrings(

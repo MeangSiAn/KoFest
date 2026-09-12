@@ -16,6 +16,8 @@ data class FestivalFilter(
     val to: LocalDate? = null,
     val ongoingOnly: Boolean = false,
     val hasImageOnly: Boolean = false,
+    /** 축제 이름 검색. `/festivals?q=` */
+    val query: String? = null,
 ) {
     /** 화면 제목처럼 "한 지역"으로 다룰 때 쓴다. 광역권이면 첫 코드다 */
     val primaryRegionCode: String? get() = regionCodes.firstOrNull()

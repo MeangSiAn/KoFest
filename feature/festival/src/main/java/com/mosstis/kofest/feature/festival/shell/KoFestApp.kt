@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import android.net.Uri
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,6 +27,7 @@ import com.mosstis.kofest.feature.festival.magazine.StoryRoute
 import com.mosstis.kofest.feature.festival.magazine.StoryViewModel
 import com.mosstis.kofest.feature.festival.place.PlaceDetailRoute
 import com.mosstis.kofest.feature.festival.place.PlaceDetailViewModel
+import com.mosstis.kofest.feature.festival.search.SearchRoute
 import com.mosstis.kofest.feature.festival.plan.PlanRoute
 import com.mosstis.kofest.feature.festival.navigation.KoFestDestination
 import com.mosstis.kofest.feature.festival.my.MyRoute
@@ -48,6 +50,7 @@ fun KoFestApp(
     val current = KoFestDestination.fromRoute(route)
     // 언어별로 contentId 가 다르다. 테마 언어가 아니라 그 항목이 속한 데이터의 언어로 경로를 만든다 —
     // 언어를 바꾼 직후에는 화면에 아직 이전 언어의 데이터가 남아 있기 때문이다.
+    val openSearch: () -> Unit = { navController.navigate(SEARCH_ROUTE) }
     val openDetail: (AppLanguage, Long) -> Unit = { language, contentId ->
         navController.navigate(detailRoute(language, contentId))
     }
@@ -80,6 +83,7 @@ fun KoFestApp(
 
             composable(KoFestDestination.HOME.route) {
                 HomeRoute(
+                    onSearch = openSearch,
                     onNavigateToDetail = openDetail,
                     onNavigateToList = { regionCodes, ongoingOnly ->
                         navController.navigate(listRoute(regionCodes, ongoingOnly)) {
@@ -102,12 +106,26 @@ fun KoFestApp(
                 )
             }
 
+            composable(SEARCH_ROUTE) {
+                SearchRoute(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToFestival = openDetail,
+                    onNavigateToPlace = openPlace,
+                    onNavigateToFestivalList = { query ->
+                        navController.navigate(listRoute(query = query)) { launchSingleTop = true }
+                    },
+                    modifier = Modifier.statusBarsPadding(),
+                )
+            }
+
             composable(
                 route = "${KoFestDestination.LIST.route}?" +
                     "${ListViewModel.ARG_REGION}={${ListViewModel.ARG_REGION}}&" +
-                    "${ListViewModel.ARG_ONGOING}={${ListViewModel.ARG_ONGOING}}",
+                    "${ListViewModel.ARG_ONGOING}={${ListViewModel.ARG_ONGOING}}&" +
+                    "${ListViewModel.ARG_QUERY}={${ListViewModel.ARG_QUERY}}",
             ) {
                 ListRoute(
+                    onSearch = openSearch,
                     onNavigateToDetail = openDetail,
                     onNavigateToPlace = openPlace,
                     modifier = Modifier.statusBarsPadding(),
@@ -116,6 +134,7 @@ fun KoFestApp(
 
             composable(KoFestDestination.PLAN.route) {
                 PlanRoute(
+                    onSearch = openSearch,
                     onNavigateToDetail = openDetail,
                     onNavigateToPlace = openPlace,
                     modifier = Modifier.statusBarsPadding(),
@@ -124,6 +143,7 @@ fun KoFestApp(
 
             composable(KoFestDestination.MAGAZINE.route) {
                 MagazineRoute(
+                    onSearch = openSearch,
                     onNavigateToStory = { language, slug ->
                         navController.navigate(storyRoute(language, slug))
                     },
@@ -146,6 +166,7 @@ fun KoFestApp(
 
             composable(KoFestDestination.MY.route) {
                 MyRoute(
+                    onSearch = openSearch,
                     onNavigateToDetail = openDetail,
                     onNavigateToList = {
                         navController.navigate(listRoute(regionCodes = emptyList(), ongoingOnly = false)) {
@@ -208,12 +229,18 @@ private const val INTRO_ROUTE = "intro"
 private const val DETAIL_ROUTE = "detail"
 private const val STORY_ROUTE = "story"
 private const val PLACE_ROUTE = "place"
+private const val SEARCH_ROUTE = "search"
 
 /** 광역권은 시도코드가 여럿이라 콤마로 잇는다 (경기·인천 = "41,28") */
-private fun listRoute(regionCodes: List<String>, ongoingOnly: Boolean): String =
+private fun listRoute(
+    regionCodes: List<String> = emptyList(),
+    ongoingOnly: Boolean = false,
+    query: String = "",
+): String =
     "${KoFestDestination.LIST.route}?" +
         "${ListViewModel.ARG_REGION}=${regionCodes.joinToString(",")}&" +
-        "${ListViewModel.ARG_ONGOING}=$ongoingOnly"
+        "${ListViewModel.ARG_ONGOING}=$ongoingOnly&" +
+        "${ListViewModel.ARG_QUERY}=${Uri.encode(query)}"
 
 /** 언어별로 contentId 가 다르므로 경로에 언어를 함께 담는다. */
 private fun detailRoute(language: AppLanguage, contentId: Long): String =
