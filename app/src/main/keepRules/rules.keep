@@ -1,12 +1,9 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
+# R8 keep rule. AGP 가 이 폴더의 파일을 전부 합쳐 R8 에 넘긴다 (proguard-rules.pro 대신 쓰는 AGP 9 방식).
 #
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# Retrofit · OkHttp · kotlinx.serialization · Coil · Hilt · DataStore 는 라이브러리가 자기 규칙을 같이 배포하므로
+# 여기에 다시 적지 않는다. `@Serializable` DTO 도 serializer 가 필드 이름을 문자열로 들고 있어 난독화해도 된다.
+# 여기에는 이 앱만의 것만 둔다.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 크래시 스택트레이스에 줄 번호가 남게 한다. 파일명은 난독화해도 되지만 줄 번호는 있어야 mapping.txt 로 되짚는다.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

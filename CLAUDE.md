@@ -277,6 +277,7 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 ./gradlew :app:testDebugUnitTest --tests "*ExampleUnitTest.addition_isCorrect"  # 단일 메서드
 ./gradlew :app:connectedDebugAndroidTest  # 계측 테스트 (기기 필요)
 ./gradlew :app:lintDebug                # Android Lint
+./gradlew :app:bundleRelease            # 스토어 업로드용 AAB (R8 적용, keystore.properties 필요)
 ./gradlew projects                      # 모듈 목록 확인
 ```
 
@@ -292,7 +293,13 @@ Route 안의 `LaunchedEffect` 에서 상위 콜백을 부를 때는 `rememberUpd
 - **Kotlin 2.2.10 이 의존성 상한이다.** Kotlin 2.4 로 빌드된 라이브러리는 메타데이터를 못 읽어 컴파일이 깨진다 (그래서 Coil 은 최신 3.6.x 가 아니라 **3.4.0**). 새 라이브러리를 넣기 전에 그 pom 의 `kotlin-stdlib` 버전을 확인한다
 - **core library desugaring 이 켜져 있다.** `minSdk 24` 에서 `java.time` 을 쓰기 위한 것이다. `java.time` 을 쓰는 새 Android 모듈에는 `isCoreLibraryDesugaringEnabled = true` 와 `coreLibraryDesugaring(libs.desugar.jdk.libs)` 를 함께 넣는다
 - Compose 는 `:core:designsystem` / `:core:ui` / `:feature:*` 에만 적용한다. `:app` / `:core:common` / `:core:presentation` 에는 넣지 않는다
-- release 빌드는 현재 `optimization { enable = false }` — R8 미적용 상태다. 켤 때 keep rule 은 `app/src/main/keepRules/` 에 넣는다 (AGP 가 이 폴더의 파일들을 합쳐 R8 에 넘긴다)
+- **release 는 R8 이 켜져 있다** (`isMinifyEnabled` + `isShrinkResources`). keep rule 은 `app/src/main/keepRules/` 에 둔다 (AGP 가 이 폴더의 파일들을 합쳐 R8 에 넘긴다 — `configuration.txt` 로 확인).
+  AGP 9.2.1 의 새 DSL `optimization { enable = true }` 는 `android.r8.gradual.support` 플래그를 요구해 쓰지 않았다.
+  Retrofit · kotlinx.serialization · Coil · Hilt 는 자기 규칙을 배포하므로 앱 규칙은 줄 번호 보존뿐이다. 2026-09-15 실기기에서 홈·상세·목록 동작 확인
+- **debug 는 `applicationIdSuffix = ".debug"`** (`com.mosstis.kofest.debug`, 런처 이름 `KoFest Dev`) — 스토어 빌드와 한 기기에 같이 둔다. 데이터도 따로 쌓인다
+- **릴리스 서명은 `keystore.properties`** (`.gitignore` 됨, 양식 `keystore.properties.example`). 파일이 없으면 release 는 서명 없이 만들어진다(`app-release-unsigned.apk`).
+  스토어용은 `./gradlew :app:bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`, `mapping.txt` 는 `app/build/outputs/mapping/release/` (Play Console 에 함께 올린다)
+- 올릴 때마다 `versionCode` 를 1 올린다 (`app/build.gradle.kts`)
 
 ## 전체 아키텍처
 

@@ -1,0 +1,4 @@
+<resources>
+    <!-- 개발 빌드는 런처에서 스토어 빌드와 구분되게 한다 -->
+    <string name="app_name">KoFest Dev</string>
+</resources>

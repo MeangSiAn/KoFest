@@ -19,6 +19,7 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.mosstis.kofest", appContext.packageName)
+        // debug 는 applicationIdSuffix 로 ".debug" 가 붙는다
+        assertTrue(appContext.packageName.startsWith("com.mosstis.kofest"))
     }
 }
